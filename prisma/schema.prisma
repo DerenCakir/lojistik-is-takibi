@@ -1,0 +1,123 @@
+// Deren İş Takibi — veri modeli
+// Yerelde SQLite, internete taşırken provider = "postgresql" yapılacak.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // Supabase — pooled (6543)
+  directUrl = env("DIRECT_URL")   // Supabase — direct (5432), migration için
+}
+
+// ---- Kullanıcılar ----
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  name         String
+  role         String   @default("EMPLOYEE") // MANAGER | EMPLOYEE
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  sessions       Session[]
+  assignedJobs   Job[]        @relation("JobAssignee")
+  createdJobs    Job[]        @relation("JobCreator")
+  jobUpdates     JobUpdate[]
+  createdEvents  Event[]      @relation("EventCreator")
+  eventTasks     EventTask[]  @relation("EventTaskAssignee")
+}
+
+// ---- Oturumlar (giriş) ----
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ---- İşler ----
+model Job {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @default("")
+  status      String   @default("BEKLEMEDE") // BEKLEMEDE | DEVAM | TAMAMLANDI
+  priority    String   @default("ORTA")      // DUSUK | ORTA | YUKSEK
+  dueDate     DateTime?
+
+  assigneeId  String?
+  assignee    User?    @relation("JobAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  createdById String
+  createdBy   User     @relation("JobCreator", fields: [createdById], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  updates     JobUpdate[]
+  tasks       JobTask[]
+
+  @@index([status])
+  @@index([assigneeId])
+}
+
+// İşe eklenen tarihli gelişme / not akışı
+model JobUpdate {
+  id        String   @id @default(cuid())
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([jobId])
+}
+
+// İşe ait yapılacaklar (checklist)
+model JobTask {
+  id        String   @id @default(cuid())
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  text      String
+  done      Boolean  @default(false)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([jobId])
+}
+
+// ---- Takvim etkinlikleri (ör. denetim) ----
+model Event {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @default("")
+  date        DateTime
+  createdById String
+  createdBy   User     @relation("EventCreator", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+
+  tasks       EventTask[]
+
+  @@index([date])
+}
+
+// Etkinliğe bağlı yapılacaklar (yönetici ekler, çalışan tamamlar)
+model EventTask {
+  id         String   @id @default(cuid())
+  eventId    String
+  event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  text       String
+  note       String   @default("")
+  done       Boolean  @default(false)
+  order      Int      @default(0)
+  assigneeId String?
+  assignee   User?    @relation("EventTaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  createdAt  DateTime @default(now())
+
+  @@index([eventId])
+}

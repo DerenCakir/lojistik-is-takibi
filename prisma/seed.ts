@@ -6,27 +6,29 @@ const db = new PrismaClient();
 async function main() {
   const hash = (p: string) => bcrypt.hash(p, 10);
 
-  // ---- Kullanıcılar: herkes tam yetkili (MANAGER). ----
+  // ---- Kullanıcılar (yerel test). Roller: MUDUR | YONETICI | CALISAN ----
   const admin = await db.user.upsert({
     where: { username: "deren" },
-    update: { role: "MANAGER" },
-    create: {
-      username: "deren",
-      name: "Deren",
-      role: "MANAGER",
-      passwordHash: await hash("1234"),
-    },
+    update: { role: "MUDUR", isAdmin: true },
+    create: { username: "deren", name: "Deren", role: "MUDUR", isAdmin: true, passwordHash: await hash("1234") },
   });
 
   await db.user.upsert({
     where: { username: "selin" },
-    update: { role: "MANAGER" },
-    create: {
-      username: "selin",
-      name: "Selin",
-      role: "MANAGER",
-      passwordHash: await hash("1234"),
-    },
+    update: { role: "CALISAN" },
+    create: { username: "selin", name: "Selin", role: "CALISAN", passwordHash: await hash("1234") },
+  });
+
+  await db.user.upsert({
+    where: { username: "veli" },
+    update: {},
+    create: { username: "veli", name: "Veli Yönetici", role: "YONETICI", passwordHash: await hash("1234") },
+  });
+
+  await db.user.upsert({
+    where: { username: "ayse" },
+    update: {},
+    create: { username: "ayse", name: "Ayşe Çalışan", role: "CALISAN", passwordHash: await hash("1234") },
   });
 
   // ---- Örnek veriler (yalnızca sistem boşsa) ----

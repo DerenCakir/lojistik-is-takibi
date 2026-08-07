@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { roleLabel } from "@/lib/constants";
 import { updateUser, toggleUserActive, resetPassword } from "./actions";
 
 type Props = {
@@ -23,7 +24,7 @@ export default function UserRow({ u, isSelf }: Props) {
           </div>
           <div className="meta">
             <span>@{u.username}</span>
-            <span className="chip">{u.role === "MANAGER" ? "Yönetici" : "Çalışan"}</span>
+            <span className="chip">{roleLabel(u.role)}</span>
             {!u.active && <span className="status-pill st-open">Pasif</span>}
           </div>
         </div>
@@ -46,8 +47,9 @@ export default function UserRow({ u, isSelf }: Props) {
               <div>
                 <label>Rol</label>
                 <select name="role" defaultValue={u.role} disabled={isSelf}>
-                  <option value="EMPLOYEE">Çalışan</option>
-                  <option value="MANAGER">Yönetici</option>
+                  <option value="CALISAN">Çalışan</option>
+                  <option value="YONETICI">Yönetici</option>
+                  <option value="MUDUR">Müdür</option>
                 </select>
                 {isSelf && <div className="mini" style={{ marginTop: 4 }}>Kendi rolünüzü değiştiremezsiniz.</div>}
               </div>

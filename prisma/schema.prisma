@@ -17,7 +17,8 @@ model User {
   username     String   @unique
   passwordHash String
   name         String
-  role         String   @default("EMPLOYEE") // MANAGER | EMPLOYEE
+  role         String   @default("CALISAN") // MUDUR | YONETICI | CALISAN
+  isAdmin      Boolean  @default(false)     // true = kullanıcı/yetki yönetimi yapabilir (Deren)
   active       Boolean  @default(true)
   createdAt    DateTime @default(now())
 
@@ -27,6 +28,7 @@ model User {
   supportJobs    Job[]        @relation("JobSupport")
   createdJobs    Job[]        @relation("JobCreator")
   jobUpdates     JobUpdate[]
+  taggedTasks    JobTask[]    @relation("JobTaskTags")
   createdEvents  Event[]      @relation("EventCreator")
   eventTasks     EventTask[]  @relation("EventTaskAssignee")
 }
@@ -50,6 +52,7 @@ model Job {
   description String   @default("")
   status      String   @default("BEKLEMEDE") // BEKLEMEDE | DEVAM | TAMAMLANDI
   priority    String   @default("ORTA")      // DUSUK | ORTA | YUKSEK
+  visibility  String   @default("HERKES")    // HERKES | SORUMLU (sadece sorumlu+oluşturan+destek+müdür)
   dueDate     DateTime?
 
   assigneeId  String?
@@ -92,6 +95,8 @@ model JobTask {
   done      Boolean  @default(false)
   order     Int      @default(0)
   createdAt DateTime @default(now())
+
+  tags      User[]   @relation("JobTaskTags") // maddeye etiketlenen kişiler (çoklu)
 
   @@index([jobId])
 }

@@ -1,13 +1,15 @@
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
+import { visibleJobsWhere } from "@/lib/jobs";
 import NewJobButton from "./NewJobButton";
 import JobList, { type JobRow } from "./JobList";
 
 export default async function JobsPage() {
-  await requireUser();
+  const user = await requireUser();
 
   const [jobs, users] = await Promise.all([
     db.job.findMany({
+      where: visibleJobsWhere(user),
       orderBy: { createdAt: "desc" },
       include: {
         assignee: { select: { name: true } },

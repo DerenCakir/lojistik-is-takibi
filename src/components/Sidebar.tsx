@@ -7,6 +7,7 @@ import { logoutAction } from "@/app/(app)/actions";
 import ThemeButton from "./ThemeButton";
 import Logo from "./Logo";
 import Icon from "./Icon";
+import { roleLabel } from "@/lib/constants";
 
 type Props = {
   user: CurrentUser;
@@ -48,9 +49,11 @@ export default function Sidebar({ user, counts }: Props) {
           <span className="ic"><Icon name="calendar" size={17} /></span> Takvim
           {counts.upcomingEvents > 0 && <span className="badge">{counts.upcomingEvents}</span>}
         </Link>
-        <Link href="/kullanicilar" className={`navbtn ${isActive("/kullanicilar") ? "active" : ""}`}>
-          <span className="ic"><Icon name="users" size={17} /></span> Kullanıcılar
-        </Link>
+        {user.isAdmin && (
+          <Link href="/kullanicilar" className={`navbtn ${isActive("/kullanicilar") ? "active" : ""}`}>
+            <span className="ic"><Icon name="users" size={17} /></span> Kullanıcılar
+          </Link>
+        )}
       </nav>
 
       <div className="side-foot">
@@ -58,7 +61,7 @@ export default function Sidebar({ user, counts }: Props) {
           <div className="avatar">{initials}</div>
           <div className="uinfo">
             <div className="nm">{user.name}</div>
-            <div className="rl">{user.role === "MANAGER" ? "Yönetici" : "Çalışan"}</div>
+            <div className="rl">{roleLabel(user.role)}</div>
           </div>
           <ThemeButton />
           <form action={logoutAction}>

@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import { createQuickTask } from "./isler/actions";
-import { PRIORITIES } from "@/lib/constants";
+import { PRIORITIES, VISIBILITIES } from "@/lib/constants";
 
 type UserOption = { id: string; name: string };
 
@@ -37,6 +37,14 @@ export default function QuickTask({ users }: { users: UserOption[] }) {
         <div>
           <label htmlFor="qt-due">Teslim tarihi</label>
           <input id="qt-due" name="dueDate" type="date" />
+        </div>
+        <div>
+          <label htmlFor="qt-vis">Görünürlük</label>
+          <select id="qt-vis" name="visibility" defaultValue="HERKES">
+            {VISIBILITIES.map((v) => (
+              <option key={v.id} value={v.id}>{v.label}</option>
+            ))}
+          </select>
         </div>
         <div>
           <label htmlFor="qt-assignee">Sorumlu</label>

@@ -37,9 +37,10 @@ export default function NewUserButton() {
               </div>
               <div style={{ minWidth: 150 }}>
                 <label htmlFor="nu-role">Rol</label>
-                <select id="nu-role" name="role" defaultValue="EMPLOYEE">
-                  <option value="EMPLOYEE">Çalışan</option>
-                  <option value="MANAGER">Yönetici</option>
+                <select id="nu-role" name="role" defaultValue="CALISAN">
+                  <option value="CALISAN">Çalışan</option>
+                  <option value="YONETICI">Yönetici</option>
+                  <option value="MUDUR">Müdür</option>
                 </select>
               </div>
             </div>

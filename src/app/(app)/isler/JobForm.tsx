@@ -1,6 +1,6 @@
 "use client";
 
-import { STATUSES, PRIORITIES } from "@/lib/constants";
+import { STATUSES, PRIORITIES, VISIBILITIES } from "@/lib/constants";
 
 export type UserOption = { id: string; name: string };
 
@@ -14,6 +14,7 @@ type Props = {
     description?: string;
     status?: string;
     priority?: string;
+    visibility?: string;
     dueDate?: string; // YYYY-MM-DD
     assigneeId?: string | null;
     requesterId?: string | null;
@@ -53,6 +54,15 @@ export default function JobForm({ action, users, submitLabel, initial }: Props) 
             ))}
           </select>
         </div>
+      </div>
+
+      <div>
+        <label htmlFor="visibility">Görünürlük</label>
+        <select id="visibility" name="visibility" defaultValue={initial?.visibility ?? "HERKES"}>
+          {VISIBILITIES.map((v) => (
+            <option key={v.id} value={v.id}>{v.label}</option>
+          ))}
+        </select>
       </div>
 
       <div className="row">

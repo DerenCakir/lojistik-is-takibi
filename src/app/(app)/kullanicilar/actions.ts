@@ -2,11 +2,17 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { requireUser, hashPassword } from "@/lib/auth";
+import { requireAdmin, hashPassword } from "@/lib/auth";
 
-// Herkes her şeyi yapabilir — sadece giriş şartı.
+const ROLE_SET = new Set(["MUDUR", "YONETICI", "CALISAN"]);
+function readRole(formData: FormData) {
+  const r = String(formData.get("role") ?? "CALISAN");
+  return ROLE_SET.has(r) ? r : "CALISAN";
+}
+
+// Kullanıcı/yetki yönetimi sadece admin (Deren).
 async function requireManager() {
-  return requireUser();
+  return requireAdmin();
 }
 
 export async function createUser(_prev: unknown, formData: FormData) {
@@ -14,7 +20,7 @@ export async function createUser(_prev: unknown, formData: FormData) {
   const username = String(formData.get("username") ?? "").trim().toLowerCase();
   const name = String(formData.get("name") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  const role = String(formData.get("role") ?? "EMPLOYEE") === "MANAGER" ? "MANAGER" : "EMPLOYEE";
+  const role = readRole(formData);
 
   if (!username || !name || !password) return { error: "Tüm alanlar zorunlu." };
   if (password.length < 4) return { error: "Şifre en az 4 karakter olmalı." };
@@ -32,7 +38,7 @@ export async function updateUser(formData: FormData) {
   await requireManager();
   const id = String(formData.get("id") ?? "");
   const name = String(formData.get("name") ?? "").trim();
-  const role = String(formData.get("role") ?? "EMPLOYEE") === "MANAGER" ? "MANAGER" : "EMPLOYEE";
+  const role = readRole(formData);
   if (!id || !name) return;
   await db.user.update({ where: { id }, data: { name, role } });
   revalidatePath("/kullanicilar");

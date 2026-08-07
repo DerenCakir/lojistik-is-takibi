@@ -12,6 +12,24 @@ export const PRIORITIES = [
   { id: "YUKSEK", label: "Yüksek", color: "var(--red)" },
 ] as const;
 
+export const ROLES = [
+  { id: "MUDUR", label: "Müdür" },
+  { id: "YONETICI", label: "Yönetici" },
+  { id: "CALISAN", label: "Çalışan" },
+] as const;
+
+export function roleLabel(id: string) {
+  // Eski değerleri de karşıla (MANAGER→Yönetici, EMPLOYEE→Çalışan)
+  if (id === "MANAGER") return "Yönetici";
+  if (id === "EMPLOYEE") return "Çalışan";
+  return ROLES.find((r) => r.id === id)?.label ?? "Çalışan";
+}
+
+export const VISIBILITIES = [
+  { id: "HERKES", label: "Herkes görsün" },
+  { id: "SORUMLU", label: "Sadece sorumlu görsün" },
+] as const;
+
 export function statusInfo(id: string) {
   return STATUSES.find((s) => s.id === id) ?? STATUSES[0];
 }

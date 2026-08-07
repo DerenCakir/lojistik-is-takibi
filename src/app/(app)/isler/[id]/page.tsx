@@ -2,10 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
+import { canSeeJob } from "@/lib/jobs";
 import { statusInfo, priorityInfo, STATUSES, fmtDate, fmtDateTime, daysUntilLabel, daysUntil, toDateInput } from "@/lib/constants";
 import Icon from "@/components/Icon";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
 import EditJobButton from "../EditJobButton";
+import TaskTags from "../TaskTags";
 import {
   setJobStatus,
   deleteJob,
@@ -28,7 +30,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
         requester: { select: { name: true } },
         support: { select: { id: true, name: true } },
         createdBy: { select: { name: true } },
-        tasks: { orderBy: { order: "asc" } },
+        tasks: { orderBy: { order: "asc" }, include: { tags: { select: { id: true, name: true } } } },
         updates: { orderBy: { createdAt: "desc" }, include: { author: { select: { name: true } } } },
       },
     }),
@@ -36,6 +38,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
   ]);
 
   if (!job) notFound();
+  if (!canSeeJob(user, job)) notFound();
 
   const st = statusInfo(job.status);
   const pr = priorityInfo(job.priority);
@@ -60,6 +63,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
             description: job.description,
             status: job.status,
             priority: job.priority,
+            visibility: job.visibility,
             dueDate: toDateInput(job.dueDate),
             assigneeId: job.assigneeId,
             requesterId: job.requesterId,
@@ -115,32 +119,37 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
               </div>
             )}
             {job.tasks.map((t) => (
-              <div key={t.id} className="checkline">
-                <form action={toggleJobTask}>
-                  <input type="hidden" name="id" value={t.id} />
-                  <input type="hidden" name="jobId" value={job.id} />
-                  <button
-                    type="submit"
-                    title="Tamamlandı olarak işaretle"
-                    style={{
-                      width: 20, height: 20, borderRadius: 6, padding: 0, cursor: "pointer",
-                      border: `1.5px solid ${t.done ? "var(--brand)" : "var(--line)"}`,
-                      background: t.done ? "var(--brand)" : "transparent",
-                      color: "#fff", display: "inline-flex", alignItems: "center", justifyContent: "center",
-                    }}
-                  >
-                    {t.done && <Icon name="check" size={12} strokeWidth={2.6} />}
-                  </button>
-                </form>
-                <span className={t.done ? "done-line" : ""} style={{ flex: 1 }}>{t.text}</span>
-                <form action={deleteJobTask}>
-                  <input type="hidden" name="id" value={t.id} />
-                  <input type="hidden" name="jobId" value={job.id} />
-                  <button type="submit" className="iconbtn" title="Sil"><Icon name="trash" size={15} /></button>
-                </form>
+              <div key={t.id} style={{ padding: "8px 0", borderBottom: "1px solid var(--line)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <form action={toggleJobTask}>
+                    <input type="hidden" name="id" value={t.id} />
+                    <input type="hidden" name="jobId" value={job.id} />
+                    <button
+                      type="submit"
+                      title="Tamamlandı olarak işaretle"
+                      style={{
+                        width: 20, height: 20, borderRadius: 6, padding: 0, cursor: "pointer",
+                        border: `1.5px solid ${t.done ? "var(--brand)" : "var(--line)"}`,
+                        background: t.done ? "var(--brand)" : "transparent",
+                        color: "#fff", display: "inline-flex", alignItems: "center", justifyContent: "center",
+                      }}
+                    >
+                      {t.done && <Icon name="check" size={12} strokeWidth={2.6} />}
+                    </button>
+                  </form>
+                  <span className={t.done ? "done-line" : ""} style={{ flex: 1 }}>{t.text}</span>
+                  <form action={deleteJobTask}>
+                    <input type="hidden" name="id" value={t.id} />
+                    <input type="hidden" name="jobId" value={job.id} />
+                    <button type="submit" className="iconbtn" title="Sil"><Icon name="trash" size={15} /></button>
+                  </form>
+                </div>
+                <div style={{ paddingLeft: 30 }}>
+                  <TaskTags taskId={t.id} jobId={job.id} users={users} tags={t.tags} />
+                </div>
               </div>
             ))}
-            <form action={addJobTask} style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            <form action={addJobTask} style={{ display: "flex", gap: 8, marginTop: 12 }}>
               <input type="hidden" name="jobId" value={job.id} />
               <input name="text" placeholder="Yeni madde ekle…" required />
               <button className="btn" type="submit">Ekle</button>

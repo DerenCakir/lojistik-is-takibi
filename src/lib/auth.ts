@@ -12,8 +12,13 @@ export type CurrentUser = {
   id: string;
   username: string;
   name: string;
-  role: "MANAGER" | "EMPLOYEE";
+  role: string; // MUDUR | YONETICI | CALISAN (eski: MANAGER | EMPLOYEE)
+  isAdmin: boolean; // kullanıcı/yetki yönetimi (Deren)
 };
+
+export function isMudur(user: { role: string }) {
+  return user.role === "MUDUR";
+}
 
 export async function hashPassword(plain: string) {
   return bcrypt.hash(plain, 10);
@@ -73,7 +78,8 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     id: session.user.id,
     username: session.user.username,
     name: session.user.name,
-    role: session.user.role as "MANAGER" | "EMPLOYEE",
+    role: session.user.role,
+    isAdmin: session.user.isAdmin,
   };
 }
 
@@ -81,5 +87,12 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 export async function requireUser(): Promise<CurrentUser> {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  return user;
+}
+
+// Sadece admin (kullanıcı/yetki yönetimi). Değilse ana sayfaya yönlendirir.
+export async function requireAdmin(): Promise<CurrentUser> {
+  const user = await requireUser();
+  if (!user.isAdmin) redirect("/");
   return user;
 }

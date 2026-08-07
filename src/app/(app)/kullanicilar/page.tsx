@@ -1,10 +1,10 @@
 import { db } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth";
 import NewUserButton from "./NewUserButton";
 import UserRow from "./UserRow";
 
 export default async function UsersPage() {
-  const me = await requireUser();
+  const me = await requireAdmin();
 
   const users = await db.user.findMany({ orderBy: [{ active: "desc" }, { name: "asc" }] });
 

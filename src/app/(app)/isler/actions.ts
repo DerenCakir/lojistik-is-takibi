@@ -7,6 +7,12 @@ import { requireUser } from "@/lib/auth";
 
 const STATUS_SET = new Set(["BEKLEMEDE", "DEVAM", "TAMAMLANDI"]);
 const PRIORITY_SET = new Set(["DUSUK", "ORTA", "YUKSEK"]);
+const VIS_SET = new Set(["HERKES", "SORUMLU"]);
+
+function readVisibility(formData: FormData) {
+  const v = String(formData.get("visibility") ?? "HERKES");
+  return VIS_SET.has(v) ? v : "HERKES";
+}
 
 function parseDate(v: FormDataEntryValue | null): Date | null {
   const s = String(v ?? "").trim();
@@ -32,6 +38,7 @@ export async function createJob(formData: FormData) {
       description: String(formData.get("description") ?? "").trim(),
       status: STATUS_SET.has(status) ? status : "BEKLEMEDE",
       priority: PRIORITY_SET.has(priority) ? priority : "ORTA",
+      visibility: readVisibility(formData),
       dueDate: parseDate(formData.get("dueDate")),
       assigneeId,
       requesterId,
@@ -62,6 +69,7 @@ export async function createQuickTask(formData: FormData) {
       description: String(formData.get("description") ?? "").trim(),
       status: "BEKLEMEDE",
       priority: PRIORITY_SET.has(priority) ? priority : "ORTA",
+      visibility: readVisibility(formData),
       dueDate: parseDate(formData.get("dueDate")),
       assigneeId,
       requesterId,
@@ -93,6 +101,7 @@ export async function updateJob(formData: FormData) {
       description: String(formData.get("description") ?? "").trim(),
       status: STATUS_SET.has(status) ? status : "BEKLEMEDE",
       priority: PRIORITY_SET.has(priority) ? priority : "ORTA",
+      visibility: readVisibility(formData),
       dueDate: parseDate(formData.get("dueDate")),
       assigneeId,
       requesterId,
@@ -154,8 +163,22 @@ export async function addJobTask(formData: FormData) {
   const text = String(formData.get("text") ?? "").trim();
   if (!jobId || !text) return;
 
+  const tagIds = formData.getAll("tagIds").map(String).filter(Boolean);
   const count = await db.jobTask.count({ where: { jobId } });
-  await db.jobTask.create({ data: { jobId, text, order: count } });
+  await db.jobTask.create({
+    data: { jobId, text, order: count, tags: { connect: tagIds.map((id) => ({ id })) } },
+  });
+  revalidatePath(`/isler/${jobId}`);
+}
+
+// Bir maddeye etiketli kişileri güncelle (çoklu)
+export async function setJobTaskTags(formData: FormData) {
+  await requireUser();
+  const id = String(formData.get("id") ?? "");
+  const jobId = String(formData.get("jobId") ?? "");
+  if (!id) return;
+  const tagIds = formData.getAll("tagIds").map(String).filter(Boolean);
+  await db.jobTask.update({ where: { id }, data: { tags: { set: tagIds.map((tid) => ({ id: tid })) } } });
   revalidatePath(`/isler/${jobId}`);
 }
 

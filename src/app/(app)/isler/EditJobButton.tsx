@@ -14,6 +14,7 @@ type Props = {
     description: string;
     status: string;
     priority: string;
+    visibility: string;
     dueDate: string; // YYYY-MM-DD veya ""
     assigneeId: string | null;
     requesterId: string | null;

@@ -1,20 +1,23 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
+import { visibleJobsWhere } from "@/lib/jobs";
 import Icon from "@/components/Icon";
 import QuickTask from "./QuickTask";
-import { statusInfo, priorityInfo, fmtDate, fmtDateLong, daysUntilLabel, daysUntil } from "@/lib/constants";
+import { statusInfo, fmtDate, fmtDateLong, daysUntilLabel, daysUntil } from "@/lib/constants";
 
-type ActiveJob = {
+type VJob = {
   id: string;
   title: string;
   status: string;
   priority: string;
   dueDate: Date | null;
+  assigneeId: string | null;
   assignee: { name: string } | null;
+  support: { id: string }[];
 };
 
-function JobLine({ j }: { j: ActiveJob }) {
+function JobLine({ j }: { j: VJob }) {
   const st = statusInfo(j.status);
   const overdue = j.dueDate && daysUntil(j.dueDate) < 0;
   return (
@@ -40,14 +43,14 @@ export default async function DashboardPage() {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
-  const [openCount, doingCount, doneCount, overdueCount, activeJobs, upcomingEvents, users] = await Promise.all([
-    db.job.count({ where: { status: "BEKLEMEDE" } }),
-    db.job.count({ where: { status: "DEVAM" } }),
-    db.job.count({ where: { status: "TAMAMLANDI" } }),
-    db.job.count({ where: { status: { not: "TAMAMLANDI" }, dueDate: { lt: todayStart } } }),
+  const [visibleJobs, upcomingEvents, users] = await Promise.all([
     db.job.findMany({
-      where: { status: { not: "TAMAMLANDI" } },
-      include: { assignee: { select: { name: true } } },
+      where: visibleJobsWhere(user),
+      select: {
+        id: true, title: true, status: true, priority: true, dueDate: true, assigneeId: true,
+        assignee: { select: { name: true } },
+        support: { select: { id: true } },
+      },
     }),
     db.event.findMany({
       where: { date: { gte: todayStart } },
@@ -58,16 +61,26 @@ export default async function DashboardPage() {
     db.user.findMany({ where: { active: true }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
   ]);
 
-  const byDue = (a: ActiveJob, b: ActiveJob) =>
-    (a.dueDate ? a.dueDate.getTime() : Infinity) - (b.dueDate ? b.dueDate.getTime() : Infinity);
+  const active = visibleJobs.filter((j) => j.status !== "TAMAMLANDI");
+  const openCount = visibleJobs.filter((j) => j.status === "BEKLEMEDE").length;
+  const doingCount = visibleJobs.filter((j) => j.status === "DEVAM").length;
+  const doneCount = visibleJobs.filter((j) => j.status === "TAMAMLANDI").length;
+  const overdueCount = active.filter((j) => j.dueDate && daysUntil(j.dueDate) < 0).length;
 
-  const priorityJobs = activeJobs.filter((j) => j.priority === "YUKSEK").sort(byDue).slice(0, 6);
-  const upcomingDue = activeJobs.filter((j) => j.dueDate).sort(byDue).slice(0, 6);
+  const byDue = (a: VJob, b: VJob) =>
+    (a.dueDate ? a.dueDate.getTime() : Infinity) - (b.dueDate ? b.dueDate.getTime() : Infinity);
+  const priorityJobs = active.filter((j) => j.priority === "YUKSEK").sort(byDue).slice(0, 6);
+  const upcomingDue = active.filter((j) => j.dueDate).sort(byDue).slice(0, 6);
 
   const perPerson = users
-    .map((u) => ({ name: u.name, count: activeJobs.filter((j) => j.assigneeId === u.id).length }))
-    .sort((a, b) => b.count - a.count);
-  const unassigned = activeJobs.filter((j) => !j.assigneeId).length;
+    .map((u) => ({
+      name: u.name,
+      open: active.filter((j) => j.assigneeId === u.id).length,
+      done: visibleJobs.filter((j) => j.assigneeId === u.id && j.status === "TAMAMLANDI").length,
+      support: active.filter((j) => j.support.some((s) => s.id === u.id)).length,
+    }))
+    .sort((a, b) => b.open - a.open);
+  const unassigned = active.filter((j) => !j.assigneeId).length;
 
   return (
     <>
@@ -90,7 +103,6 @@ export default async function DashboardPage() {
         </div>
 
         <div className="panel-grid">
-          {/* SOL: özet listeler */}
           <div>
             <div className="card">
               <h3 style={{ justifyContent: "space-between" }}>
@@ -114,25 +126,27 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          {/* SAĞ: hızlı görev + özetler */}
           <div>
             <QuickTask users={users} />
 
-            <div className="card">
-              <h3>Kişiye göre</h3>
-              {perPerson.map((p) => (
-                <div key={p.name} className="checkline" style={{ justifyContent: "space-between", padding: "5px 0" }}>
-                  <span>{p.name}</span>
-                  <span className="chip" style={{ fontWeight: 600, color: "var(--brand)" }}>{p.count}</span>
+            {user.role === "MUDUR" && (
+              <div className="card">
+                <h3>Kişiye göre (ekip)</h3>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {perPerson.map((p) => (
+                    <div key={p.name}>
+                      <div style={{ fontWeight: 600, fontSize: 13.5 }}>{p.name}</div>
+                      <div className="mini" style={{ display: "flex", gap: 10, marginTop: 1 }}>
+                        <span><b style={{ color: "var(--brand)" }}>{p.open}</b> açık</span>
+                        <span><b>{p.done}</b> bitti</span>
+                        <span><b>{p.support}</b> destek</span>
+                      </div>
+                    </div>
+                  ))}
+                  {unassigned > 0 && <div className="mini">Atanmamış: <b>{unassigned}</b></div>}
                 </div>
-              ))}
-              {unassigned > 0 && (
-                <div className="checkline" style={{ justifyContent: "space-between", padding: "5px 0" }}>
-                  <span className="mini">Atanmamış</span>
-                  <span className="chip">{unassigned}</span>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
 
             <div className="card">
               <h3>Yaklaşan etkinlikler</h3>

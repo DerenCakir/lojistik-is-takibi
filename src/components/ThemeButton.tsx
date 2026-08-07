@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Icon from "./Icon";
 
 export default function ThemeButton() {
   const [dark, setDark] = useState(false);
@@ -23,13 +24,13 @@ export default function ThemeButton() {
 
   return (
     <button
-      className="btn sm ghost"
+      className="sidebtn"
       type="button"
       onClick={toggle}
-      title="Temayı değiştir"
-      style={{ flex: 1, justifyContent: "center" }}
+      title={dark ? "Aydınlık temaya geç" : "Koyu temaya geç"}
+      aria-label="Temayı değiştir"
     >
-      {dark ? "☀️ Aydınlık" : "🌙 Koyu"}
+      <Icon name={dark ? "sun" : "moon"} size={16} />
     </button>
   );
 }

@@ -23,6 +23,8 @@ model User {
 
   sessions       Session[]
   assignedJobs   Job[]        @relation("JobAssignee")
+  requestedJobs  Job[]        @relation("JobRequester")
+  supportJobs    Job[]        @relation("JobSupport")
   createdJobs    Job[]        @relation("JobCreator")
   jobUpdates     JobUpdate[]
   createdEvents  Event[]      @relation("EventCreator")
@@ -52,6 +54,9 @@ model Job {
 
   assigneeId  String?
   assignee    User?    @relation("JobAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  requesterId String?
+  requester   User?    @relation("JobRequester", fields: [requesterId], references: [id], onDelete: SetNull)
+  support     User[]   @relation("JobSupport") // Takip-Destek kişileri (çoklu)
   createdById String
   createdBy   User     @relation("JobCreator", fields: [createdById], references: [id])
 

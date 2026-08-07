@@ -54,18 +54,16 @@ export default function Sidebar({ user, counts }: Props) {
       </nav>
 
       <div className="side-foot">
-        <div className="userbox">
+        <div className="userbar">
           <div className="avatar">{initials}</div>
-          <div>
+          <div className="uinfo">
             <div className="nm">{user.name}</div>
             <div className="rl">{user.role === "MANAGER" ? "Yönetici" : "Çalışan"}</div>
           </div>
-        </div>
-        <div className="row" style={{ gap: 6 }}>
           <ThemeButton />
-          <form action={logoutAction} style={{ flex: 1 }}>
-            <button className="btn sm ghost" type="submit" style={{ width: "100%", justifyContent: "center", gap: 6 }}>
-              <Icon name="logout" size={15} /> Çıkış
+          <form action={logoutAction}>
+            <button className="sidebtn" type="submit" title="Çıkış yap" aria-label="Çıkış yap">
+              <Icon name="logout" size={16} />
             </button>
           </form>
         </div>

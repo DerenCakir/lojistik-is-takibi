@@ -16,6 +16,8 @@ type Props = {
     priority?: string;
     dueDate?: string; // YYYY-MM-DD
     assigneeId?: string | null;
+    requesterId?: string | null;
+    supportIds?: string[];
   };
 };
 
@@ -63,6 +65,30 @@ export default function JobForm({ action, users, submitLabel, initial }: Props) 
             ))}
           </select>
         </div>
+        <div style={{ minWidth: 140 }}>
+          <label htmlFor="requesterId">Kimden istendi</label>
+          <select id="requesterId" name="requesterId" defaultValue={initial?.requesterId ?? ""}>
+            <option value="">— Belirtilmedi —</option>
+            {users.map((u) => (
+              <option key={u.id} value={u.id}>{u.name}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label>Takip-Destek (kişiler)</label>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {users.map((u) => (
+            <label key={u.id} className="chk">
+              <input type="checkbox" name="supportIds" value={u.id} defaultChecked={initial?.supportIds?.includes(u.id)} />
+              {u.name}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div className="row">
         <div style={{ minWidth: 140 }}>
           <label htmlFor="dueDate">Son tarih</label>
           <input id="dueDate" name="dueDate" type="date" defaultValue={initial?.dueDate ?? ""} />

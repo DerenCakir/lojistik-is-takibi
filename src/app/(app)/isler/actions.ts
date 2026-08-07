@@ -23,6 +23,8 @@ export async function createJob(formData: FormData) {
   const status = String(formData.get("status") ?? "BEKLEMEDE");
   const priority = String(formData.get("priority") ?? "ORTA");
   const assigneeId = String(formData.get("assigneeId") ?? "").trim() || null;
+  const requesterId = String(formData.get("requesterId") ?? "").trim() || null;
+  const supportIds = formData.getAll("supportIds").map(String).filter(Boolean);
 
   const job = await db.job.create({
     data: {
@@ -32,6 +34,8 @@ export async function createJob(formData: FormData) {
       priority: PRIORITY_SET.has(priority) ? priority : "ORTA",
       dueDate: parseDate(formData.get("dueDate")),
       assigneeId,
+      requesterId,
+      support: { connect: supportIds.map((id) => ({ id })) },
       createdById: user.id,
     },
   });
@@ -39,6 +43,35 @@ export async function createJob(formData: FormData) {
   revalidatePath("/isler");
   revalidatePath("/");
   redirect(`/isler/${job.id}`);
+}
+
+// Panelden hızlı görev: kendine (veya seçilene) iş açar, kimden istendiği bilgisiyle.
+export async function createQuickTask(formData: FormData) {
+  const user = await requireUser();
+  const title = String(formData.get("title") ?? "").trim();
+  if (!title) return;
+
+  const priority = String(formData.get("priority") ?? "ORTA");
+  const assigneeId = String(formData.get("assigneeId") ?? "").trim() || user.id;
+  const requesterId = String(formData.get("requesterId") ?? "").trim() || null;
+  const supportIds = formData.getAll("supportIds").map(String).filter(Boolean);
+
+  await db.job.create({
+    data: {
+      title,
+      description: String(formData.get("description") ?? "").trim(),
+      status: "BEKLEMEDE",
+      priority: PRIORITY_SET.has(priority) ? priority : "ORTA",
+      dueDate: parseDate(formData.get("dueDate")),
+      assigneeId,
+      requesterId,
+      support: { connect: supportIds.map((id) => ({ id })) },
+      createdById: user.id,
+    },
+  });
+
+  revalidatePath("/");
+  revalidatePath("/isler");
 }
 
 export async function updateJob(formData: FormData) {
@@ -50,6 +83,8 @@ export async function updateJob(formData: FormData) {
   const status = String(formData.get("status") ?? "BEKLEMEDE");
   const priority = String(formData.get("priority") ?? "ORTA");
   const assigneeId = String(formData.get("assigneeId") ?? "").trim() || null;
+  const requesterId = String(formData.get("requesterId") ?? "").trim() || null;
+  const supportIds = formData.getAll("supportIds").map(String).filter(Boolean);
 
   await db.job.update({
     where: { id },
@@ -60,6 +95,8 @@ export async function updateJob(formData: FormData) {
       priority: PRIORITY_SET.has(priority) ? priority : "ORTA",
       dueDate: parseDate(formData.get("dueDate")),
       assigneeId,
+      requesterId,
+      support: { set: supportIds.map((id) => ({ id })) },
     },
   });
 

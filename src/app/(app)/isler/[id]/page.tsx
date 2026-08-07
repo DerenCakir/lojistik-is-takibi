@@ -25,6 +25,8 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
       where: { id },
       include: {
         assignee: { select: { name: true } },
+        requester: { select: { name: true } },
+        support: { select: { id: true, name: true } },
         createdBy: { select: { name: true } },
         tasks: { orderBy: { order: "asc" } },
         updates: { orderBy: { createdAt: "desc" }, include: { author: { select: { name: true } } } },
@@ -60,6 +62,8 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
             priority: job.priority,
             dueDate: toDateInput(job.dueDate),
             assigneeId: job.assigneeId,
+            requesterId: job.requesterId,
+            supportIds: job.support.map((s) => s.id),
           }}
         />
         <form action={deleteJob}>
@@ -149,6 +153,8 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
             <div style={{ display: "flex", flexDirection: "column", gap: 10, fontSize: 14 }}>
               <div><span className="mini">Durum</span><br /><span className={`status-pill ${st.cls}`}>{st.label}</span></div>
               <div><span className="mini">Sorumlu</span><br /><b>{job.assignee?.name ?? "Atanmadı"}</b></div>
+              <div><span className="mini">Kimden istendi</span><br />{job.requester?.name ?? "—"}</div>
+              <div><span className="mini">Takip-Destek</span><br />{job.support.length ? job.support.map((s) => s.name).join(", ") : "—"}</div>
               <div><span className="mini">Son tarih</span><br />{job.dueDate ? `${fmtDate(job.dueDate)} · ${daysUntilLabel(job.dueDate)}` : "—"}</div>
               <div><span className="mini">Oluşturan</span><br />{job.createdBy.name}</div>
             </div>

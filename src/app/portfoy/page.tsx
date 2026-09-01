@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
+import { portfoyYetki } from "@/lib/portfoy";
 import Icon from "@/components/Icon";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +17,7 @@ export const dynamic = "force-dynamic";
 export default async function PortfoyPortalPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  const mudur = portfoyYetki(user) === "duzenle_tumu";
 
   return (
     <div className="pfp-wrap">
@@ -24,6 +26,12 @@ export default async function PortfoyPortalPage() {
           <Icon name="arrowLeft" size={15} /> Portal seçimi
         </Link>
         <span className="pfp-title">Portföy Puanlama Portalı</span>
+        <span className="pfp-ara" />
+        {mudur && (
+          <Link href="/portfoy/veri-yukle" className="pfp-eylem">
+            <Icon name="plus" size={14} /> Veri yükle
+          </Link>
+        )}
         <span className="pfp-user">{user.name}</span>
       </div>
       <iframe

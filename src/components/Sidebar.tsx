@@ -49,8 +49,11 @@ export default function Sidebar({ user, counts }: Props) {
           <span className="ic"><Icon name="calendar" size={17} /></span> Takvim
           {counts.upcomingEvents > 0 && <span className="badge">{counts.upcomingEvents}</span>}
         </Link>
-        <Link href="/portfoy" className={`navbtn ${isActive("/portfoy") ? "active" : ""}`}>
-          <span className="ic"><Icon name="chart" size={17} /></span> Portföy
+        <Link href="/portfoy" className="navbtn">
+          <span className="ic"><Icon name="chart" size={17} /></span> Portföy Portalı
+        </Link>
+        <Link href="/sec" className="navbtn">
+          <span className="ic"><Icon name="home" size={17} /></span> Portal seçimi
         </Link>
         {user.isAdmin && (
           <Link href="/kullanicilar" className={`navbtn ${isActive("/kullanicilar") ? "active" : ""}`}>

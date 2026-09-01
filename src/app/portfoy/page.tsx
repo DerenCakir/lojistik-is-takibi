@@ -37,9 +37,14 @@ export default async function PortfoyPortalPage() {
         </Link>
         <span className="pfp-ara" />
         {mudur && (
-          <Link href="/portfoy/veri-yukle" className="pfp-eylem">
-            <Icon name="plus" size={14} /> Veri yükle
-          </Link>
+          <>
+            <Link href="/portfoy/temsilciler" className="pfp-eylem">
+              <Icon name="users" size={14} /> Temsilciler
+            </Link>
+            <Link href="/portfoy/veri-yukle" className="pfp-eylem">
+              <Icon name="plus" size={14} /> Veri yükle
+            </Link>
+          </>
         )}
         <span className="pfp-user">{user.name}</span>
       </div>

@@ -264,7 +264,7 @@ input[type=range]{width:100%;accent-color:var(--teal);height:16px}
 .dagad i.u3{color:#1D467E} .dagad i.u2{color:#0F6E6E} .dagad i.u1{color:var(--ink3)} .dagad i.u0{color:#B9A24A}
 .dagbar{height:6px;background:#E4E3DA;border-radius:2px;overflow:hidden}
 .dagbar b{display:block;height:100%}
-.dagpu{font-family:var(--mono);font-size:10px;font-weight:600;text-align:right}
+.dagpu{font-family:var(--mono);font-size:10px;font-weight:600;text-align:right}.dfark{display:block;font-size:9.5px;font-weight:700;margin-top:1px}.dfark.up{color:#1a7f37}.dfark.dn{color:#c0392b}
 .turbox{border:1px solid var(--line);border-radius:3px;background:var(--panel);margin:0 15px 12px;padding:9px 12px}
 .turbas{display:flex;align-items:center;justify-content:space-between;font-family:var(--mono);
   font-size:9px;letter-spacing:.09em;color:var(--ink3);margin-bottom:7px}
@@ -854,7 +854,13 @@ function veriDonustur(D){
     nl:+r.teslim_noktasi||0,gm:+r.malzeme_kodu||0,
     gon:+r.gonullu_puan,val:+r.puan}]));
 
-  return {C,L,KAT,AG,DENKLEM,EKIP,UNVAN,GON,PUAN,ADI,TID,
+  /* Acilir listeler ve dagitim tahtasi icin: musterisi olmasa da AKTIF olan
+     herkes. Eskiden bu liste cari atamalarindan turetiliyordu; yeni gelen
+     temsilci hicbir yerde gorunmuyordu. */
+  const TEM=D.temsilciler.filter(t=>t.aktif!==false).map(t=>t.ad)
+            .sort((a,b)=>a.localeCompare(b,'tr'));
+
+  return {C,L,KAT,AG,DENKLEM,EKIP,UNVAN,GON,PUAN,ADI,TID,TEM,
     ZEKL:D.zorunluTur.map(t=>({id:t.id,ad:t.ad,kat:+t.katsayi})),
     GONT:D.gonulluTur.map(t=>({id:t.id,ad:t.ad,p:+t.puan}))};
 }
@@ -939,7 +945,7 @@ const FIELDS=[{k:'t',h:'Mevcut Temsilci'},{k:'sg',h:'Segment'},{k:'on',h:'Müşt
  {k:'mz',h:'Malzeme Zorluğu Kademesi'},{k:'st',h:'Sipariş Tipi'},{k:'ko',h:'Kim Ödüyor'},
  {k:'ek',h:'Ekipman Kullanımı'},{k:'pt',h:'Portal Kullanımı'},{k:'et',h:'Etiket'},{k:'an',h:'ASN'}];
 const SEG=['Ana Otomotiv','Tier-1','Toptancı','After Market','Beyaz Eşya','Holding Firması','GMBH Yan Sanayi','Kıtalararası Müşteri','POTANSİYEL MÜŞTERİ'];
-const TEM=[...new Set(RAW.C.map(o=>o.t).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'tr'));
+const TEM=RAW.TEM;   /* aktif temsilciler — musterisi olmayan da dahil */
 const EKIPD={};   /* personel listesi veritabaninda */
 let EKIP=RAW.EKIP;
 let GON=RAW.GON;   /* gonullu ek is kayitlari — veritabanindan */
@@ -1254,12 +1260,17 @@ const hix=v=>Math.sqrt(Math.max(v,0));
 let PUAN=new Map();
 function repAggregate(list){
   const R={},add=t=>R[t]||(R[t]={rep:t,n:0,toplam:0,sv:0,nl:0,gm:0});
+  /* Musterisi olmayan aktif temsilciler de sifirla listede yer alsin;
+     yoksa dagitim tahtasinda gorunmez ve onlara musteri surukleyemezsiniz. */
+  (RAW.TEM||[]).forEach(add);
   list.forEach(c=>{const a=ag(c),v=yuk(c);
     shares(c).forEach(sh=>{const f=sh.pct/100,g=add(sh.t);
       g.n+=f;g.toplam+=v*f;g.sv+=a.sv*f;g.nl+=a.nl*f;g.gm+=a.gm*f})});
   const L=Object.values(R);
-  L.forEach(g=>{const p=PUAN.get(g.rep);
-    g.gon=p?p.gon:0;g.val=p?p.val:0;g.ekip=p?p.ekip:(EKIP[g.rep]||'')});
+  /* Gosterilen puan senaryo acikken senaryodan, degilse kayitli degerden gelir. */
+  L.forEach(g=>{const b=PUAN.get(g.rep), s=(SENARYO&&SENARYO.get(g.rep))||b;
+    g.gon=s?s.gon:0; g.val=s?s.val:0;
+    g.ekip=(b||s)?((b||s).ekip||''):(EKIP[g.rep]||'')});
   return L}
 const gonToplam=t=>{const p=PUAN.get(t);return p?p.gon:0};
 /* Puan view'den okunur; senaryo acikken f_senaryo_puan sonucundan. */
@@ -1409,10 +1420,52 @@ const WDEF={lokasyonSabit:0};
 let WV={...WDEF,m:JSON.parse(JSON.stringify(MDEF))};
 const AGD={mod:'toplam',p:0.2,rBal:0,wsv:1,wnl:2,wgm:1,olcek:1000,us:0.25,kat:33};
 let AG=RAW.AG;
-/* v_cari_pay'den gelir; normalizasyon veritabaninda yapilir. */
+/* ---------- Bolusum: yerel duzenlemeleri de gorur ----------
+   Acilista c.t ve c.sp veritabanindaki paylardan dolduruldu. Dagitim
+   tahtasinda veya Ana veri'de atama degisince buradan okunur; yoksa
+   ekranda tasima olur ama hicbir sayi degismezdi. Normalizasyon
+   (yuzdeleri 100'e getirme) veritabanindaki v_cari_pay ile ayni kuraldir. */
 function shares(c){
-  return (c._pay&&c._pay.length)?c._pay:[{t:c.t||'(atanmamış)',pct:100}];
+  const sp=(c.sp||[]).filter(x=>x.t&&+x.pct>0);
+  if(!sp.length) return [{t:c.t||'(atanmamış)',pct:100}];
+  const tot=sp.reduce((a,x)=>a+ +x.pct,0)||100;
+  return sp.map(x=>({t:x.t,pct:+x.pct/tot*100}));
 }
+
+/* ---------- Senaryo: kaydetmeden "ne olurdu" ----------
+   Puan hesabi veritabanindaki f_senaryo_puan icinde yapilir. Portal yalniz
+   guncel atamalari gonderir, donen puanlari gosterir. */
+let senBekle=null;
+function senaryoTazele(){
+  if(CEVRIMDISI)return;
+  clearTimeout(senBekle);
+  senBekle=setTimeout(async()=>{
+    const atamalar=[];
+    C.forEach(c=>shares(c).forEach(s=>{
+      const id=(RAW.ADI&&RAW.ADI.get)?RAW.ADI.get(s.t):null;
+      atamalar.push({cari_kod:c.k,temsilci_id:id==null?null:id,pay:s.pct});
+    }));
+    try{
+      const M=await senaryoPuanGetir(atamalar);
+      if(M){SENARYO=M;draw();syncAll();drawDag()}
+    }catch(e){console.warn('senaryo:',e.message)}
+  },350);
+}
+
+/* Kayitli duruma gore fark: + alan, - veren. */
+function puanFarki(rep){
+  if(!SENARYO)return 0;
+  const s=SENARYO.get(rep), b=PUAN.get(rep);
+  if(!s)return 0;
+  return s.val-(b?b.val:0);
+}
+function farkRozeti(rep){
+  const d=puanFarki(rep);
+  if(Math.abs(d)<0.05)return '';
+  const y=d>0?'up':'dn';
+  return `<span class="dfark ${y}">${d>0?'+':'−'}${nf(Math.abs(d))} puan</span>`;
+}
+
 const KGRP=[
  {g:'kanal', t:'Dağıtım kanalı', keys:[['10','Yurtiçi 10'],['20','Yurtdışı 20'],['','boş']]},
  {g:'on',    t:'Müşteri önemi kademesi', keys:[['1','1'],['2','2'],['3','3'],['4','4'],['','boş']]},
@@ -2056,7 +2109,7 @@ function dagSiralama(hedef,ek,baslik,renk,L,mx,sir){
         <span class="dagno">${i+1}</span>
         <span class="dagad">${esc(g.rep)}<i class="u${u||'0'}">${u?esc(unvanKisa(u)):'—'}${ty?' · '+ty+' yeni':''}</i></span>
         <span class="dagbar"><b style="width:${Math.min(100,g.val/mx*100)}%;background:${renk}"></b></span>
-        <span class="dagpu">${nf(g.val)}</span></div>`}).join('')}`;
+        <span class="dagpu">${nf(g.val)}${farkRozeti(g.rep)}</span></div>`}).join('')}`;
 }
 const ILK={};RAW.C.forEach(c=>ILK[String(c.k)]=c.t||'');
 const tasindi=c=>{const sh=shares(c);const su=sh.length?sh.map(x=>x.t).join('|'):'';
@@ -2125,7 +2178,8 @@ function wireDag(){
       const k=veri.startsWith('cari:')?veri.slice(5):veri;
       const c=C.find(x=>String(x.k)===k);
       if(!c)return;
-      c.t=(t==='(atanmamış)')?'':t;touched('veri');
+      c.t=(t==='(atanmamış)')?'':t;delete c.sp;   /* tasima = tam devir */
+      touched('veri');senaryoTazele();
       draw();syncAll();drawDag()})})}
 function dagOto(){
   if(!FXOK)return;
@@ -2333,10 +2387,10 @@ function drawTD(rows,rank,hedef){
       <span class="badge ${x.yd?'yd':''}">${x.yd} yurtdışı</span>
       ${x.hrk?`<span class="badge hrk">${x.hrk} hareketsiz</span>`:''}
       ${x.gp?`<span class="badge dus">${x.gp} eksik hücre</span>`:''}</div></div>
-    <div class="dscore"><div><div class="un">Puan</div><div class="big">${nf(puanBul(x.rep))}</div></div>
+    <div class="dscore"><div><div class="un">Puan</div><div class="big">${nf(puanBul(x.ad))} ${farkRozeti(x.ad)}</div></div>
       <div class="rank2"><b>${rank.get(x.ad)}.</b> sırada · ${rows.length} temsilci arasında<br>
       yük toplamı <b>${nf(liste.reduce((a,c)=>a+py(c),0))}</b> · cari başına <b>${nf(liste.reduce((a,c)=>a+py(c),0)/(liste.length||1))}</b><br>
-      <span style="font-family:var(--mono);font-size:10.5px">${nf(liste.reduce((a,c)=>a+py(c),0))} ^ ${nf(AG.us)} × ${nf(AG.kat)}${gonToplam(x.rep)?' + ek iş '+nf(gonToplam(x.rep)):''} = ${nf(puanBul(x.rep))}</span></div></div>
+      <span style="font-family:var(--mono);font-size:10.5px">${nf(liste.reduce((a,c)=>a+py(c),0))} ^ ${nf(AG.us)} × ${nf(AG.kat)}${gonToplam(x.ad)?' + ek iş '+nf(gonToplam(x.ad)):''} = ${nf(puanBul(x.ad))}</span></div></div>
     <div class="dsec"><h5>Yük hangi kriterlerden geliyor</h5>
       <table class="stbl"><tbody>
       ${(()=>{

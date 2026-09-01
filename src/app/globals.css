@@ -441,3 +441,24 @@ a.item:hover{border-color:color-mix(in srgb, var(--brand) 42%, var(--line)); box
 .dg-ok{margin:0 7px; color:var(--muted)}
 .dg-yeni{font-weight:600}
 .dg-not{margin-top:14px; font-size:12px; color:var(--muted)}
+
+/* Temsilci kadrosu */
+.tk-govde{flex:1; overflow:auto; padding:24px 26px 44px; background:var(--bg);
+  display:flex; flex-direction:column; gap:18px; max-width:1100px}
+.tk-kart{background:var(--panel); border:1px solid var(--line);
+  border-radius:var(--radius); padding:20px 22px}
+.tk-kart h3{margin:0 0 14px; font-size:14px; display:flex; align-items:center; gap:9px}
+.tk-rozet{background:var(--chip); color:var(--txt2); border-radius:99px;
+  padding:1px 9px; font-size:11px; font-weight:650}
+.tk-form{display:flex; gap:9px; flex-wrap:wrap; align-items:center}
+.tk-form input,.tk-form select{width:auto; min-width:170px}
+.tk-form .btn{flex-shrink:0}
+.tk-not{margin:12px 0 0; font-size:12.5px; color:var(--muted); line-height:1.65}
+.tk-eylem{display:flex; gap:6px; justify-content:flex-end; white-space:nowrap}
+.tk-eylem .btn{padding:5px 11px; font-size:12px}
+.tk-duzenle td{background:var(--panel2)}
+.tk-devir{border-color:color-mix(in srgb,var(--brand) 40%,var(--line))}
+.tk-mesaj{padding:11px 15px; border-radius:11px; font-size:13px;
+  background:var(--green-soft); color:var(--green)}
+.tk-hata{padding:11px 15px; border-radius:11px; font-size:13px; line-height:1.6;
+  background:var(--red-soft); color:var(--red)}

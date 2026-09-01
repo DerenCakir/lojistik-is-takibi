@@ -1,5 +1,5 @@
 import "server-only";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { ALANLAR } from "./portfoy";
 
 /**
@@ -105,57 +105,78 @@ export async function tamKayit(tx: Tx, veri: TamKayit, kullanici: string, tamYet
   const gid = new Map(gRows.map((r) => [r.ad, Number(r.id)]));
 
   // ---------- cariler: sınıflandırma + atama + zorunlu ek işler ----------
-  for (const c of veri.cari ?? []) {
-    if (!c?.k) continue;
+  //
+  // TOPLU YAZMA. Eskiden her cari icin ayri sorgu atiliyordu: 336 cari x ~5
+  // sorgu = 1500+ gidis-donus. Prisma'nin varsayilan islem suresi 5 saniye;
+  // Supabase'e bu kadar sorgu yetismiyor ve "Transaction not found" hatasi
+  // aliniyordu. Simdi hepsi birkac ifadede yapiliyor.
+  const cariler = (veri.cari ?? []).filter((c) => c?.k);
+  if (cariler.length) {
+    // Degerler metin olarak gonderilip SET icinde donusturuluyor; boylece
+    // bir kolonun tamami NULL oldugunda Postgres tip cikaramama sorunu olmuyor.
+    const bos = (v: string | null) => v ?? "";
+    const satirlar = cariler.map((c) => Prisma.sql`(${c.k}, ${bos(alan("segment", c.sg))},
+      ${bos(alan("onem", c.on))}, ${bos(alan("zorluk", c.mz))},
+      ${bos(alan("siparis_tipi", c.st))}, ${bos(alan("kim_oduyor", c.ko))},
+      ${bos(alan("ekipman", c.ek))}, ${bos(alan("portal", c.pt))},
+      ${bos(alan("etiket", c.et))}, ${bos(alan("asn", c.an))})`);
 
-    const onem = alan("onem", c.on);
-    const zorluk = alan("zorluk", c.mz);
     await tx.$executeRaw`
-      update portfoy.cari set
-        segment      = ${alan("segment", c.sg)},
-        onem         = ${onem === null ? null : Number(onem)},
-        zorluk       = ${zorluk === null ? null : Number(zorluk)},
-        siparis_tipi = ${alan("siparis_tipi", c.st)},
-        kim_oduyor   = ${alan("kim_oduyor", c.ko)},
-        ekipman      = ${alan("ekipman", c.ek)},
-        portal       = ${alan("portal", c.pt)},
-        etiket       = ${alan("etiket", c.et)},
-        asn          = ${alan("asn", c.an)},
+      update portfoy.cari c set
+        segment      = nullif(v.segment, ''),
+        onem         = nullif(v.onem, '')::smallint,
+        zorluk       = nullif(v.zorluk, '')::smallint,
+        siparis_tipi = nullif(v.siparis_tipi, ''),
+        kim_oduyor   = nullif(v.kim_oduyor, ''),
+        ekipman      = nullif(v.ekipman, ''),
+        portal       = nullif(v.portal, ''),
+        etiket       = nullif(v.etiket, ''),
+        asn          = nullif(v.asn, ''),
         guncelleme   = now()
-      where kod = ${c.k}`;
-    sayac.cari++;
+      from (values ${Prisma.join(satirlar)}) as v(kod, segment, onem, zorluk,
+             siparis_tipi, kim_oduyor, ekipman, portal, etiket, asn)
+      where c.kod = v.kod`;
+    sayac.cari = cariler.length;
 
-    // atama: bölüşüm varsa onu, yoksa tek temsilciyi yaz
-    const paylar = (c.sp ?? []).filter((s) => s?.t && Number(s.pct) > 0);
-    await tx.$executeRaw`delete from portfoy.portfoy where cari_kod = ${c.k}`;
-    if (paylar.length) {
-      for (const s of paylar) {
-        const id = tid.get(s.t);
-        if (!id) continue;
-        await tx.$executeRaw`
-          insert into portfoy.portfoy (cari_kod, temsilci_id, pay)
-          values (${c.k}, ${id}, ${Number(s.pct)})
-          on conflict (cari_kod, temsilci_id) do update set pay = excluded.pay`;
-        sayac.atama++;
-      }
-    } else if (c.t && c.t !== "(atanmamış)") {
-      const id = tid.get(c.t);
-      if (id) {
-        await tx.$executeRaw`
-          insert into portfoy.portfoy (cari_kod, temsilci_id, pay) values (${c.k}, ${id}, 100)`;
-        sayac.atama++;
+    const kodlar = cariler.map((c) => c.k);
+
+    // ---- atama: once temizle, sonra toplu yaz ----
+    const paySatir: ReturnType<typeof Prisma.sql>[] = [];
+    for (const c of cariler) {
+      const paylar = (c.sp ?? []).filter((s) => s?.t && Number(s.pct) > 0);
+      if (paylar.length) {
+        for (const s of paylar) {
+          const id = tid.get(s.t);
+          if (id) { paySatir.push(Prisma.sql`(${c.k}, ${id}, ${Number(s.pct)})`); sayac.atama++; }
+        }
+      } else if (c.t && c.t !== "(atanmamış)") {
+        const id = tid.get(c.t);
+        if (id) { paySatir.push(Prisma.sql`(${c.k}, ${id}, ${100})`); sayac.atama++; }
       }
     }
-
-    // zorunlu ek işler
-    await tx.$executeRaw`delete from portfoy.cari_zorunlu where cari_kod = ${c.k}`;
-    for (const ad of c.zek ?? []) {
-      const id = zid.get(ad);
-      if (!id) continue;
+    await tx.$executeRaw`
+      delete from portfoy.portfoy where cari_kod in (${Prisma.join(kodlar)})`;
+    if (paySatir.length) {
       await tx.$executeRaw`
-        insert into portfoy.cari_zorunlu (cari_kod, zorunlu_tur_id) values (${c.k}, ${id})
-        on conflict do nothing`;
-      sayac.zorunlu++;
+        insert into portfoy.portfoy (cari_kod, temsilci_id, pay)
+        values ${Prisma.join(paySatir)}
+        on conflict (cari_kod, temsilci_id) do update set pay = excluded.pay`;
+    }
+
+    // ---- zorunlu ek isler ----
+    const zekSatir: ReturnType<typeof Prisma.sql>[] = [];
+    for (const c of cariler) {
+      for (const ad of c.zek ?? []) {
+        const id = zid.get(ad);
+        if (id) { zekSatir.push(Prisma.sql`(${c.k}, ${id})`); sayac.zorunlu++; }
+      }
+    }
+    await tx.$executeRaw`
+      delete from portfoy.cari_zorunlu where cari_kod in (${Prisma.join(kodlar)})`;
+    if (zekSatir.length) {
+      await tx.$executeRaw`
+        insert into portfoy.cari_zorunlu (cari_kod, zorunlu_tur_id)
+        values ${Prisma.join(zekSatir)} on conflict do nothing`;
     }
   }
 

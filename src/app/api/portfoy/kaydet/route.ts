@@ -63,6 +63,7 @@ export async function POST(req: Request) {
 
   let sonuc: Record<string, number> | null = null;
   try {
+    // Toplu yazmaya gecilse de aglar yavas olabilir; varsayilan 5 sn kisa.
     await db.$transaction(async (tx) => {
       for (const i of islemler) {
         switch (i.tip) {
@@ -230,7 +231,7 @@ export async function POST(req: Request) {
             throw new Error(`Bilinmeyen işlem: ${(i as { tip?: string }).tip}`);
         }
       }
-    });
+    }, { timeout: 120000, maxWait: 20000 });
   } catch (e) {
     return NextResponse.json(
       { hata: e instanceof Error ? e.message : "Kaydedilemedi." },

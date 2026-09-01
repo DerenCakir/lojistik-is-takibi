@@ -211,3 +211,80 @@ a.item:hover{border-color:color-mix(in srgb, var(--brand) 42%, var(--line)); box
 
 .progress{height:6px;background:var(--chip);border-radius:8px;overflow:hidden}
 .progress > div{height:100%;background:var(--brand);border-radius:8px;transition:width .3s}
+
+/* ===================================================================
+   Portföy İş Yükü
+   Mevcut değişkenleri kullanır; gece teması kendiliğinden çalışır.
+   =================================================================== */
+.stat .m{font-size:11.5px; color:var(--muted); margin-top:5px}
+
+.pf-card{padding:0; overflow:hidden}
+.pf-head{padding:18px 22px 14px; border-bottom:1px solid var(--line)}
+.pf-head h3{margin:0; font-size:15px; letter-spacing:-.01em}
+.pf-head .sub{font-size:12px; color:var(--muted); margin-top:4px}
+
+.pf-scroll{overflow-x:auto}
+.pf-scroll-tall{max-height:calc(100vh - 300px); overflow-y:auto}
+
+.pf-table{width:100%; border-collapse:collapse; font-size:13px}
+.pf-table th{
+  position:sticky; top:0; z-index:2;
+  background:var(--panel2); color:var(--muted);
+  font-size:11px; font-weight:650; letter-spacing:.02em; text-transform:uppercase;
+  text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); white-space:nowrap;
+}
+.pf-table td{padding:9px 12px; border-bottom:1px solid var(--line); vertical-align:middle}
+.pf-table tbody tr:hover{background:color-mix(in srgb, var(--brand) 5%, transparent)}
+.pf-table .num{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+.pf-table .w-rank{width:38px; color:var(--muted); font-variant-numeric:tabular-nums}
+.pf-table .w-bar{width:120px}
+.pf-name{font-weight:600; color:var(--txt)}
+.pf-sub{font-size:11px; color:var(--muted); margin-top:2px}
+.pf-muted{color:var(--muted); font-size:12px}
+.pf-strong{font-weight:700}
+.pf-dim{opacity:.55}
+.pf-gap{color:var(--amber); font-weight:600}
+
+.pf-bar{display:block; height:6px; background:var(--chip); border-radius:99px; overflow:hidden}
+.pf-bar b{display:block; height:100%; background:var(--hero); border-radius:99px}
+
+/* Geniş tablo — müşteri sütunu kaydırırken sabit kalır */
+.pf-table-wide{min-width:1180px}
+.pf-table-wide .pf-sticky{
+  position:sticky; left:0; z-index:1;
+  background:var(--panel); min-width:230px; max-width:230px;
+  box-shadow:1px 0 0 var(--line);
+}
+.pf-table-wide thead .pf-sticky{z-index:3; background:var(--panel2)}
+.pf-table-wide tbody tr:hover .pf-sticky{background:color-mix(in srgb, var(--brand) 5%, var(--panel))}
+
+/* Hücre içi düzenleme */
+.pf-cell{
+  padding:5px 7px; border-radius:8px; font-size:12px; width:auto; min-width:74px;
+  background:transparent; border:1px solid transparent; color:var(--txt);
+}
+.pf-cell-wide{min-width:126px}
+.pf-cell:hover:not(:disabled){border-color:var(--line); background:var(--panel2)}
+.pf-cell:disabled{opacity:.75; cursor:default}
+.pf-empty-cell{background:color-mix(in srgb, var(--amber) 12%, transparent)}
+
+.pf-toolbar{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:14px}
+.pf-toolbar .search{flex:1; min-width:220px}
+.pf-sel{width:auto; min-width:150px; padding:9px 12px}
+.pf-check{
+  display:flex; align-items:center; gap:7px; margin:0; white-space:nowrap;
+  font-size:12.5px; color:var(--txt2); font-weight:500;
+}
+.pf-check input{width:auto; margin:0}
+.pf-count{font-size:12px; color:var(--muted); white-space:nowrap}
+
+.pf-err{
+  background:var(--red-soft); color:var(--red); border:1px solid color-mix(in srgb,var(--red) 30%, transparent);
+  border-radius:11px; padding:10px 14px; font-size:13px; margin-bottom:14px;
+}
+.pf-note{margin-top:16px; font-size:12.5px; color:var(--muted)}
+
+@media(max-width:860px){
+  .pf-scroll-tall{max-height:none}
+  .pf-toolbar .search{min-width:100%}
+}

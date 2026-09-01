@@ -1009,14 +1009,21 @@ function syncSave(){
 }
 function touched(kind){if(BOOT)return;PEND[kind==='denk'?'denk':'veri']+= (kind==='denk'?(PEND.denk?0:1):1);syncSave()}
 async function saveAll(){
-  if(CEVRIMDISI){toast('Çevrimdışı mod — kayıt yapılamaz. Yedek al kullanın.');return}
   if(ROL==='izleyici'){toast('Yazma yetkiniz yok.');return}
   let ok=true;
   try{
-    await dbYaz('cari',C.map(c=>({kod:c.k,ad:c.m,kanal:c.dk||null,
-      segment:c.sg||null,onem:c.on||null,zorluk:c.mz||null,
-      siparis_tipi:c.st||null,kim_oduyor:c.ko||null,ekipman:c.ek||null,
-      portal:c.pt||null,etiket:c.et||null,asn:c.an||null})),'kod');
+    /* Tum durum tek istekte gider: siniflandirma, atama, bolusum,
+       zorunlu/gonullu ek isler, ekip/unvan. Sunucu tek transaction'da yazar. */
+    const p={tip:'tam_kayit',
+      cari:C.map(c=>({k:c.k,sg:c.sg,on:c.on,mz:c.mz,st:c.st,ko:c.ko,
+        ek:c.ek,pt:c.pt,et:c.et,an:c.an,t:c.t,sp:c.sp,zek:c.zek})),
+      ekip:EKIP,unvan:UNVAN,zekl:ZEKL,gont:GONT,gon:GON};
+    /* Katsayi ve parametreleri yalniz mudur gonderebilir. */
+    if(ROL==='duzenle_tumu'){
+      p.kat=KAT;
+      p.ag={wsv:AG.wsv,wnl:AG.wnl,wgm:AG.wgm,olcek:AG.olcek,us:AG.us,kat:AG.kat};
+    }
+    await dbGonder([p]);
     await yenidenYukle();
   }catch(e){ok=false;toast('Kaydedilemedi: '+e.message)}
   if(!ok){const b=document.getElementById('nostore');b.style.display='';

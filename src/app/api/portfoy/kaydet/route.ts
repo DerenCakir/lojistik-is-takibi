@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { ALANLAR, gecerliAlan, portfoyYetki, yazabilir } from "@/lib/portfoy";
+import { ALANLAR, gecerliAlan, jsonCevap, portfoyYetki, yazabilir } from "@/lib/portfoy";
+import { tamKayit, type TamKayit } from "@/lib/portfoy-kayit";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +33,8 @@ type Islem =
   | { tip: "parametre"; anahtar: string; deger: number | string }
   | { tip: "temsilci_bilgi"; id: number; ekip: string | null; unvan: number | null }
   | { tip: "gonullu_ekle"; turId: number; temsilciId: number; aciklama: string; puan: number }
-  | { tip: "gonullu_sil"; id: number };
+  | { tip: "gonullu_sil"; id: number }
+  | ({ tip: "tam_kayit" } & TamKayit);
 
 const KATSAYI_GRUPLARI = ["kanal", "sg", "on", "mz", "st", "ko", "ek", "pt", "et", "an"];
 const PARAMETRELER = ["wsv", "wnl", "wgm", "olcek", "us", "kat"];
@@ -59,6 +61,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ hata: "Çok fazla işlem." }, { status: 400 });
   }
 
+  let sonuc: Record<string, number> | null = null;
   try {
     await db.$transaction(async (tx) => {
       for (const i of islemler) {
@@ -138,6 +141,14 @@ export async function POST(req: Request) {
                 values (${r.grup}, ${String(r.anahtar)}, ${Number(r.deger)})
                 on conflict (grup, anahtar) do update set deger=excluded.deger`;
             }
+            break;
+          }
+
+          case "tam_kayit": {
+            // Portalin "Kaydet" dugmesi tum durumu bir kerede gonderir:
+            // siniflandirma + atama + bolusum + ek isler + katsayi + parametre.
+            const sayac = await tamKayit(tx, i, user.username, tamYetki);
+            sonuc = sayac;
             break;
           }
 
@@ -227,5 +238,5 @@ export async function POST(req: Request) {
     );
   }
 
-  return NextResponse.json({ ok: true, uygulanan: islemler.length });
+  return jsonCevap({ ok: true, uygulanan: islemler.length, sayac: sonuc });
 }

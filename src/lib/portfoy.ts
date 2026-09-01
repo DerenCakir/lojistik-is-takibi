@@ -263,6 +263,35 @@ export async function senaryoPuan(
   `;
 }
 
+// ---------------------------------------------------------------- degisiklik kaydi
+
+export type Degisiklik = {
+  id: number; ts: string; kullanici: string | null;
+  tablo: string; kayit_id: string; alan: string | null;
+  eski: string | null; yeni: string | null;
+};
+
+/** Son değişiklik — portal başlığında gösterilir. */
+export async function sonDegisiklik(): Promise<{ kullanici: string; ts: Date } | null> {
+  const r = await db.$queryRaw<{ kullanici: string | null; ts: Date }[]>`
+    select kullanici, ts from portfoy.degisiklik_log order by ts desc limit 1`;
+  if (!r.length) return null;
+  return { kullanici: r[0].kullanici ?? "—", ts: r[0].ts };
+}
+
+/** Değişiklik geçmişi. */
+export async function degisiklikler(limit = 300): Promise<Degisiklik[]> {
+  const r = await db.$queryRaw<Record<string, unknown>[]>`
+    select id, ts, kullanici, tablo, kayit_id, alan, eski, yeni
+    from portfoy.degisiklik_log order by ts desc, id desc limit ${limit}`;
+  return r.map((x) => ({
+    id: Number(x.id), ts: String(x.ts), kullanici: (x.kullanici as string) ?? null,
+    tablo: String(x.tablo), kayit_id: String(x.kayit_id),
+    alan: (x.alan as string) ?? null, eski: (x.eski as string) ?? null,
+    yeni: (x.yeni as string) ?? null,
+  }));
+}
+
 // ---------------------------------------------------------------- yazma
 
 /** Düzenlenebilir sınıflandırma alanları ve kabul edilen değerleri. */

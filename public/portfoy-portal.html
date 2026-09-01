@@ -940,9 +940,9 @@ const FIELDS=[{k:'t',h:'Mevcut Temsilci'},{k:'sg',h:'Segment'},{k:'on',h:'Müşt
  {k:'ek',h:'Ekipman Kullanımı'},{k:'pt',h:'Portal Kullanımı'},{k:'et',h:'Etiket'},{k:'an',h:'ASN'}];
 const SEG=['Ana Otomotiv','Tier-1','Toptancı','After Market','Beyaz Eşya','Holding Firması','GMBH Yan Sanayi','Kıtalararası Müşteri','POTANSİYEL MÜŞTERİ'];
 const TEM=[...new Set(RAW.C.map(o=>o.t).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'tr'));
-const EKIPD={"BATUHAN AKYÜREK": "YD", "BURCU GÜRBULAK": "YD", "CAN BURAK OTHAN": "YD", "GÜLEYCAN DAĞDELEN": "YD", "NUR YAVUZ": "YD", "ÖZDENİZ EGE ARDALI": "YD", "ÖZGE COŞGUN": "YD", "RIDVAN GÜNGÖR": "YD", "SELİN AKSÜT": "YD", "TUĞÇE MERİÇ": "YD", "TÜRKER YİĞİT ERTEM": "YD", "ZEYNEP AVAR": "YD", "BURAK BAŞLAR": "YI", "EMRE GÖKHAN SOYLU": "YI", "İREM ÖDEN": "YI", "NUR ŞAHİN - BAHRİ ÇANDAR": "YI", "SELİN FIÇICI": "YI", "SEZİN KILIÇER": "YI", "ŞİYAR PALABIYIK": "YI", "TOYGAN KOÇKAFA": "YI", "UFUK GÜLTEKİN": "YI"};
+const EKIPD={};   /* personel listesi veritabaninda */
 let EKIP=RAW.EKIP;
-let GON=[{"ad": "SAT Oluşturma", "t": "TÜRKER YİĞİT ERTEM", "ac": "", "p": 1}, {"ad": "GTIP Tanımlama", "t": "TÜRKER YİĞİT ERTEM", "ac": "", "p": 1}, {"ad": "GTIP Tanımlama", "t": "RIDVAN GÜNGÖR", "ac": "", "p": 1}, {"ad": "Nakliye-Operasyon İhale Süreci", "t": "CAN BURAK OTHAN", "ac": "", "p": 2}, {"ad": "Bedelsiz İhracat Süreci", "t": "BURCU GÜRBULAK", "ac": "", "p": 2}, {"ad": "Bedelsiz İhracat Süreci", "t": "TÜRKER YİĞİT ERTEM", "ac": "", "p": 2}, {"ad": "YYS", "t": "NUR YAVUZ", "ac": "", "p": 1.5}, {"ad": "Norm Dış Depo Süreci", "t": "BURCU GÜRBULAK", "ac": "", "p": 2}, {"ad": "Eğitim / bilgi paylaşımı", "t": "TUĞÇE MERİÇ", "ac": "", "p": 1}];
+let GON=RAW.GON;   /* gonullu ek is kayitlari — veritabanindan */
 const UNVANLAR=[{k:'1',ad:'Lojistik Sorumlusu',kisa:'Sorumlu'},
                 {k:'2',ad:'Lojistik Uzmanı',kisa:'Uzman'},
                 {k:'3',ad:'Lojistik Kıdemli Uzmanı',kisa:'Kıdemli Uzman'}];

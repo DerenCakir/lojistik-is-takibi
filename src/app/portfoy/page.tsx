@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import { portfoyYetki } from "@/lib/portfoy";
+import { portfoyYetki, sonDegisiklik } from "@/lib/portfoy";
 import Icon from "@/components/Icon";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +18,12 @@ export default async function PortfoyPortalPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   const mudur = portfoyYetki(user) === "duzenle_tumu";
+  const son = await sonDegisiklik();
+  const z = (n: number) => String(n).padStart(2, "0");
+  const sonMetin = son
+    ? `son değişiklik: ${son.kullanici} · ${z(son.ts.getDate())}.${z(son.ts.getMonth() + 1)} ` +
+      `${z(son.ts.getHours())}:${z(son.ts.getMinutes())}`
+    : "henüz değişiklik yok";
 
   return (
     <div className="pfp-wrap">
@@ -26,6 +32,9 @@ export default async function PortfoyPortalPage() {
           <Icon name="arrowLeft" size={15} /> Portal seçimi
         </Link>
         <span className="pfp-title">Portföy Puanlama Portalı</span>
+        <Link href="/portfoy/degisiklikler" className="pfp-son" title="Değişiklik geçmişi">
+          <Icon name="clock" size={13} /> {sonMetin}
+        </Link>
         <span className="pfp-ara" />
         {mudur && (
           <Link href="/portfoy/veri-yukle" className="pfp-eylem">

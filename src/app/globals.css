@@ -330,3 +330,90 @@ a.item:hover{border-color:color-mix(in srgb, var(--brand) 42%, var(--line)); box
 .pfp-title{font-weight:650; letter-spacing:-.01em}
 .pfp-user{margin-left:auto; opacity:.85}
 .pfp-frame{flex:1; width:100%; border:0; display:block}
+
+/* ===================================================================
+   Veri yükleme ekranı
+   =================================================================== */
+.vy-govde{flex:1; display:grid; grid-template-columns:1fr 400px; gap:0; overflow:hidden}
+@media(max-width:1000px){.vy-govde{grid-template-columns:1fr; overflow:auto}}
+.vy-sol{padding:26px 28px; overflow:auto; background:var(--bg)}
+.vy-sag{
+  padding:26px 26px 40px; overflow:auto; background:var(--panel);
+  border-left:1px solid var(--line); font-size:13px; line-height:1.7; color:var(--txt2);
+}
+.vy-sag h3{margin:22px 0 8px; font-size:13px; color:var(--txt); letter-spacing:-.01em}
+.vy-sag h3:first-child{margin-top:0}
+.vy-sag p{margin:0 0 10px}
+.vy-liste{margin:0 0 6px; padding-left:20px}
+.vy-liste li{margin-bottom:11px}
+.vy-sutun{margin:9px 0; border-collapse:collapse; font-size:12.5px}
+.vy-sutun td{padding:3px 10px 3px 0; border-bottom:1px solid var(--line)}
+.vy-sutun td:first-child{color:var(--muted); width:20px}
+.vy-not{
+  margin-top:20px; padding:12px 14px; border-radius:11px;
+  background:var(--brand-soft); color:var(--txt2); font-size:12.5px;
+}
+
+/* bırakma alanı */
+.vy-birak{
+  border:2px dashed var(--line); border-radius:var(--radius); background:var(--panel);
+  padding:70px 30px; text-align:center; cursor:pointer;
+  transition:border-color .15s, background .15s;
+}
+.vy-birak:hover,.vy-birak.uzerinde{
+  border-color:var(--brand); background:color-mix(in srgb,var(--brand) 5%,var(--panel));
+}
+.vy-ikon{font-size:34px; color:var(--muted); line-height:1}
+.vy-baslik{margin-top:14px; font-size:15px; font-weight:650; color:var(--txt)}
+.vy-alt{margin-top:5px; font-size:12.5px; color:var(--muted)}
+
+/* önizleme */
+.vy-kart{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:22px}
+.vy-dosya{font-size:12.5px; color:var(--muted); margin-bottom:14px}
+.vy-uyari{
+  margin:0 0 12px; padding:11px 14px; border-radius:11px; font-size:12.5px; line-height:1.6;
+  background:var(--amber-soft); color:var(--amber);
+  border:1px solid color-mix(in srgb,var(--amber) 28%,transparent);
+}
+.vy-uyari.kirmizi{
+  background:var(--red-soft); color:var(--red);
+  border-color:color-mix(in srgb,var(--red) 30%,transparent);
+}
+.vy-basarili{
+  padding:12px 15px; border-radius:11px; margin-bottom:16px; font-weight:650;
+  background:var(--green-soft); color:var(--green);
+}
+.vy-ozet{width:100%; border-collapse:collapse; font-size:13px; margin-bottom:20px}
+.vy-ozet th{text-align:right; font-size:11px; text-transform:uppercase; color:var(--muted); padding:6px 10px}
+.vy-ozet th:first-child{text-align:left}
+.vy-ozet td{padding:7px 10px; border-top:1px solid var(--line); text-align:right; font-variant-numeric:tabular-nums}
+.vy-ozet td:first-child{text-align:left; color:var(--txt2)}
+.vy-ozet td:last-child{font-weight:650}
+
+.vy-bolum{margin-top:24px}
+.vy-bolum h4{margin:0 0 4px; font-size:13.5px; display:flex; align-items:center; gap:8px}
+.vy-bolum h4 span{
+  background:var(--chip); color:var(--txt2); border-radius:99px;
+  padding:1px 8px; font-size:11px; font-weight:650;
+}
+.vy-aciklama{margin:0 0 10px; font-size:12.5px; color:var(--muted); line-height:1.6}
+.vy-tablo{width:100%; border-collapse:collapse; font-size:12.5px}
+.vy-tablo th{
+  text-align:left; font-size:10.5px; text-transform:uppercase; color:var(--muted);
+  padding:7px 9px; border-bottom:1px solid var(--line); white-space:nowrap;
+}
+.vy-tablo td{padding:6px 9px; border-bottom:1px solid var(--line)}
+.vy-tablo .num{text-align:right; font-variant-numeric:tabular-nums}
+.vy-tablo input[type=checkbox]{width:auto; margin:0}
+.vy-tablo select{width:auto; min-width:104px; padding:4px 8px; font-size:12px}
+.vy-kod{font-size:11px; color:var(--muted); font-family:var(--mono,monospace)}
+.vy-supheli{opacity:.62}
+.vy-etiket{
+  margin-left:8px; font-size:10.5px; padding:1px 7px; border-radius:99px;
+  background:var(--amber-soft); color:var(--amber);
+}
+.kirmizi{color:var(--red)}
+.vy-dugmeler{display:flex; gap:10px; margin-top:24px}
+.vy-esleme{margin-bottom:16px; font-size:12.5px}
+.vy-esleme summary{cursor:pointer; color:var(--brand); font-weight:600; padding:4px 0}
+.vy-esleme table{margin-top:8px}

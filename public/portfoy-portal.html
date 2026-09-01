@@ -264,7 +264,7 @@ input[type=range]{width:100%;accent-color:var(--teal);height:16px}
 .dagad i.u3{color:#1D467E} .dagad i.u2{color:#0F6E6E} .dagad i.u1{color:var(--ink3)} .dagad i.u0{color:#B9A24A}
 .dagbar{height:6px;background:#E4E3DA;border-radius:2px;overflow:hidden}
 .dagbar b{display:block;height:100%}
-.dagpu{font-family:var(--mono);font-size:10px;font-weight:600;text-align:right}.dfark{display:block;font-size:9.5px;font-weight:700;margin-top:1px}.dmeta2 .d.neg{color:#c0392b}.dmeta2 .d.pos{color:#1a7f37}.dfark.up{color:#1a7f37}.dfark.dn{color:#c0392b}
+.dagpu{font-family:var(--mono);font-size:10px;font-weight:600;text-align:right}.dfark{display:block;font-size:9.5px;font-weight:700;margin-top:1px}.dgatan{margin-bottom:12px;padding:11px 15px;border-radius:10px;cursor:pointer;background:#fdf1e3;border:1px solid #e8c89a;display:flex;gap:12px;align-items:baseline}.dgatan:hover{background:#fbe6cd}.dgatan b{color:#8a5a10;font-size:13px}.dgatan span{color:#a07a3a;font-size:11.5px}.dmeta2 .d.neg{color:#c0392b}.dmeta2 .d.pos{color:#1a7f37}.dfark.up{color:#1a7f37}.dfark.dn{color:#c0392b}
 .turbox{border:1px solid var(--line);border-radius:3px;background:var(--panel);margin:0 15px 12px;padding:9px 12px}
 .turbas{display:flex;align-items:center;justify-content:space-between;font-family:var(--mono);
   font-size:9px;letter-spacing:.09em;color:var(--ink3);margin-bottom:7px}
@@ -2133,7 +2133,7 @@ function dagSiralama(hedef,ek,baslik,renk,L,mx,sir){
         <span class="dagbar"><b style="width:${Math.min(100,g.val/mx*100)}%;background:${renk}"></b></span>
         <span class="dagpu">${nf(g.val)}${farkRozeti(g.rep)}</span></div>`}).join('')}`;
 }
-const ILK={};RAW.C.forEach(c=>ILK[String(c.k)]=c.t||'');
+const ILK={};RAW.C.forEach(c=>ILK[String(c.k)]=(c._pay||[]).map(x=>x.t).join('|'));
 const tasindi=c=>{const sh=shares(c);const su=sh.length?sh.map(x=>x.t).join('|'):'';
   return su!==(ILK[String(c.k)]||'')};
 let DGSEC=[];
@@ -2156,13 +2156,21 @@ function drawDag(){
   const sec=DGSEC.map(r=>L.find(g=>g.rep===r)).filter(Boolean);
   const degisen=C.filter(tasindi).length;
 
-  box.innerHTML = sec.length
+  /* Atanmamis cariler hicbir ekibe ait olmadigi icin yan listelerde gorunmez
+     (yan listeler ekibe gore suzuluyor). Buradan acilip dagitilirlar. */
+  const bos=L.find(g=>g.rep==='(atanmamış)');
+  const bosBar=(bos&&bos.n>0.005&&!DGSEC.includes('(atanmamış)'))
+    ? `<div class="dgatan" data-dgsec="(atanmamış)">
+         <b>${nf(bos.n)} müşteri atanmamış</b>
+         <span>toplam yük ${nf(bos.toplam)} · dağıtmak için tıkla</span></div>`
+    : '';
+  box.innerHTML = bosBar + (sec.length
     ? `<div class="dgsecbar">${sec.length} portföy açık · ${nf(sec.reduce((a,g)=>a+g.n,0))} cari · toplam puan ${nf(sec.reduce((a,g)=>a+g.val,0))}
         ${degisen?`<span class="tsay big">${degisen} müşteri taşındı</span>`:''}
         <button class="ghost sm" id="dg-kapat">Seçimi temizle</button></div>
        <div class="dgrid">${sec.map(g=>dgKart(g,mx,fdk)).join('')}</div>`
     : `<div class="dgbos">Soldaki ve sağdaki listelerden temsilci seç.<br>
-        <span>Seçtiklerin burada yan yana açılır; müşteri kartlarını aralarında sürükleyip bırakabilirsin.</span></div>`;
+        <span>Seçtiklerin burada yan yana açılır; müşteri kartlarını aralarında sürükleyip bırakabilirsin.</span></div>`);
 
   document.getElementById('dg-stat').innerHTML=
     `<span>toplam puan <b>${nf(tot)}</b></span><span>ortalama <b>${nf(tot/(L.length||1))}</b></span>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import { portfoyYetki } from "@/lib/portfoy";
+import { portfoyYetki, yazabilir } from "@/lib/portfoy";
 import { listele } from "@/lib/portfoy-temsilci";
 import Icon from "@/components/Icon";
 import Kadro from "./Kadro";
@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function TemsilcilerPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  if (portfoyYetki(user) !== "duzenle_tumu") redirect("/portfoy");
+  if (!yazabilir(portfoyYetki(user))) redirect("/portfoy");   // müdür + yönetici
 
   const satirlar = await listele();
 

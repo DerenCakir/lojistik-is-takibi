@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import { portfoyYetki, sonDegisiklik } from "@/lib/portfoy";
+import { portfoyYetki, sonDegisiklik, yazabilir } from "@/lib/portfoy";
 import Icon from "@/components/Icon";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +17,9 @@ export const dynamic = "force-dynamic";
 export default async function PortfoyPortalPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  const mudur = portfoyYetki(user) === "duzenle_tumu";
+  const yetki = portfoyYetki(user);
+  const mudur = yetki === "duzenle_tumu";
+  const yazar = yazabilir(yetki);
   const son = await sonDegisiklik();
   const z = (n: number) => String(n).padStart(2, "0");
   const sonMetin = son
@@ -36,15 +38,15 @@ export default async function PortfoyPortalPage() {
           <Icon name="clock" size={13} /> {sonMetin}
         </Link>
         <span className="pfp-ara" />
+        {yazar && (
+          <Link href="/portfoy/temsilciler" className="pfp-eylem">
+            <Icon name="users" size={14} /> Temsilciler
+          </Link>
+        )}
         {mudur && (
-          <>
-            <Link href="/portfoy/temsilciler" className="pfp-eylem">
-              <Icon name="users" size={14} /> Temsilciler
-            </Link>
-            <Link href="/portfoy/veri-yukle" className="pfp-eylem">
-              <Icon name="plus" size={14} /> Veri yükle
-            </Link>
-          </>
+          <Link href="/portfoy/veri-yukle" className="pfp-eylem">
+            <Icon name="plus" size={14} /> Veri yükle
+          </Link>
         )}
         <span className="pfp-user">{user.name}</span>
       </div>

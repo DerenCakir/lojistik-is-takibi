@@ -2,18 +2,18 @@
 
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
-import { portfoyYetki } from "@/lib/portfoy";
+import { portfoyYetki, yazabilir } from "@/lib/portfoy";
 import {
   aktifEt, ekle, guncelle, pasifeAl, portfoyDevret,
 } from "@/lib/portfoy-temsilci";
 
 export type Sonuc = { ok: true; mesaj?: string } | { ok: false; hata: string };
 
-/** Temsilci kadrosunu yalnız müdür değiştirebilir. */
-async function mudurGerek() {
+/** Temsilci kadrosunu müdür ve yönetici değiştirebilir; çalışan değiştiremez. */
+async function yetkiGerek() {
   const user = await requireUser();
-  if (portfoyYetki(user) !== "duzenle_tumu") {
-    throw new Error("Bu işlem yalnız müdür yetkisiyle yapılabilir.");
+  if (!yazabilir(portfoyYetki(user))) {
+    throw new Error("Bu işlem için yazma yetkisi gerekiyor.");
   }
   return user;
 }
@@ -25,7 +25,7 @@ function tazele() {
 
 export async function ekleAction(fd: FormData): Promise<Sonuc> {
   try {
-    const u = await mudurGerek();
+    const u = await yetkiGerek();
     await ekle(String(fd.get("ad") ?? ""), fd.get("ekip"), fd.get("unvan"), u.username);
     tazele();
     return { ok: true, mesaj: "Temsilci eklendi." };
@@ -36,7 +36,7 @@ export async function ekleAction(fd: FormData): Promise<Sonuc> {
 
 export async function guncelleAction(fd: FormData): Promise<Sonuc> {
   try {
-    const u = await mudurGerek();
+    const u = await yetkiGerek();
     await guncelle(Number(fd.get("id")), String(fd.get("ad") ?? ""),
                    fd.get("ekip"), fd.get("unvan"), u.username);
     tazele();
@@ -48,7 +48,7 @@ export async function guncelleAction(fd: FormData): Promise<Sonuc> {
 
 export async function pasifeAlAction(id: number): Promise<Sonuc> {
   try {
-    const u = await mudurGerek();
+    const u = await yetkiGerek();
     await pasifeAl(id, u.username);
     tazele();
     return { ok: true, mesaj: "Ayrıldı olarak işaretlendi." };
@@ -59,7 +59,7 @@ export async function pasifeAlAction(id: number): Promise<Sonuc> {
 
 export async function aktifEtAction(id: number): Promise<Sonuc> {
   try {
-    const u = await mudurGerek();
+    const u = await yetkiGerek();
     await aktifEt(id, u.username);
     tazele();
     return { ok: true, mesaj: "Yeniden aktif." };
@@ -70,7 +70,7 @@ export async function aktifEtAction(id: number): Promise<Sonuc> {
 
 export async function devretAction(kaynakId: number, hedefId: number): Promise<Sonuc> {
   try {
-    const u = await mudurGerek();
+    const u = await yetkiGerek();
     const adet = await portfoyDevret(kaynakId, hedefId, u.username);
     tazele();
     return { ok: true, mesaj: `${adet} müşteri devredildi.` };

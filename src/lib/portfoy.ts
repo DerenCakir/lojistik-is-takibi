@@ -196,6 +196,73 @@ export async function ozet(): Promise<PortfoyOzet> {
   };
 }
 
+// ---------------------------------------------------------------- yanit
+
+/**
+ * JSON yanıtı.
+ *
+ * Postgres'in bigint/numeric alanları Prisma'dan BigInt veya Decimal olarak
+ * gelir; JSON.stringify ikisini de serileştiremez. Sayıya çeviriyoruz.
+ */
+export function jsonCevap(veri: unknown, durum = 200) {
+  const metin = JSON.stringify(veri, (_k, v) => {
+    if (typeof v === "bigint") return Number(v);
+    if (v && typeof v === "object" && typeof (v as { toNumber?: unknown }).toNumber === "function") {
+      return (v as { toNumber: () => number }).toNumber();
+    }
+    return v;
+  });
+  return new Response(metin, {
+    status: durum,
+    headers: { "content-type": "application/json; charset=utf-8" },
+  });
+}
+
+// ---------------------------------------------------------------- anlik veri
+
+/**
+ * Portalın (public/portfoy) beklediği tam anlık görüntü.
+ *
+ * Tek istekte tüm tabloları ve hesap view'lerini döner; portal bunu alıp
+ * yedi sekmeyi çizer. Hesap yine veritabanında yapılır — buradan sadece
+ * hazır değerler geçer.
+ */
+export async function anlikVeri() {
+  const q = <T,>(sql: string) => db.$queryRawUnsafe<T[]>(sql);
+  const [cari, pay, duyarlilik, temsilci, temsilciler, cariAlan, lokasyon,
+         zorunluTur, cariZorunlu, gonulluTur, gonulluKayit, katsayi, parametre,
+         alanDenetim] = await Promise.all([
+    q(`select * from portfoy.v_cari_yuk order by cari_kod`),
+    q(`select * from portfoy.v_cari_pay`),
+    q(`select cari_kod, degisken, ham_deger, etki from portfoy.v_cari_duyarlilik`),
+    q(`select * from portfoy.v_temsilci_puan order by puan desc`),
+    q(`select id, ad, ekip, unvan, aktif from portfoy.temsilci order by ad`),
+    q(`select kod, ad, kanal, segment, onem, zorluk, siparis_tipi,
+              kim_oduyor, ekipman, portal, etiket, asn from portfoy.cari order by kod`),
+    q(`select cari_kod, kod, ad, kanal, sevkiyat, malzeme_kodu from portfoy.teslim_noktasi`),
+    q(`select id, ad, katsayi from portfoy.zorunlu_tur order by id`),
+    q(`select cari_kod, zorunlu_tur_id from portfoy.cari_zorunlu`),
+    q(`select id, ad, puan from portfoy.gonullu_tur order by id`),
+    q(`select id, gonullu_tur_id, temsilci_id, aciklama, puan
+         from portfoy.gonullu_kayit order by id`),
+    q(`select grup, anahtar, deger from portfoy.katsayi order by grup, anahtar`),
+    q(`select anahtar, deger from portfoy.parametre order by anahtar`),
+    q(`select cari_kod, bos_hucre from portfoy.v_alan_denetim`),
+  ]);
+  return { cari, pay, duyarlilik, temsilci, temsilciler, cariAlan, lokasyon,
+           zorunluTur, cariZorunlu, gonulluTur, gonulluKayit, katsayi, parametre,
+           alanDenetim };
+}
+
+/** Dağıtım tahtasının "ne olurdu" hesabı — model yine veritabanında. */
+export async function senaryoPuan(
+  atamalar: { cari_kod: string; temsilci_id: number | null; pay?: number }[],
+) {
+  return db.$queryRaw<Record<string, unknown>[]>`
+    select * from portfoy.f_senaryo_puan(${JSON.stringify(atamalar)}::jsonb)
+  `;
+}
+
 // ---------------------------------------------------------------- yazma
 
 /** Düzenlenebilir sınıflandırma alanları ve kabul edilen değerleri. */

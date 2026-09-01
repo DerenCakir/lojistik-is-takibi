@@ -288,3 +288,45 @@ a.item:hover{border-color:color-mix(in srgb, var(--brand) 42%, var(--line)); box
   .pf-scroll-tall{max-height:none}
   .pf-toolbar .search{min-width:100%}
 }
+
+/* ===================================================================
+   Portal seçim ekranı + Portföy portalı çerçevesi
+   =================================================================== */
+.sec-wrap{min-height:100vh; display:flex; flex-direction:column; padding:26px 30px 34px}
+.sec-top{display:flex; align-items:center; gap:16px; margin-bottom:30px}
+.sec-brand{display:flex; align-items:center; gap:12px}
+.sec-brand h1{margin:0; font-size:17px; letter-spacing:-.02em}
+.sec-brand span{font-size:12px; color:var(--muted)}
+.sec-user{margin-left:auto; display:flex; align-items:center; gap:12px; font-size:12.5px; color:var(--txt2)}
+
+.sec-grid{flex:1; display:grid; grid-template-columns:1fr 1fr; gap:24px; align-content:center}
+@media(max-width:860px){.sec-grid{grid-template-columns:1fr}}
+
+.sec-card{
+  display:flex; flex-direction:column; gap:12px; padding:38px 34px; min-height:290px;
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  box-shadow:var(--shadow-sm); transition:border-color .15s, box-shadow .15s, transform .08s;
+}
+.sec-card:hover{border-color:color-mix(in srgb,var(--brand) 45%,var(--line));
+  box-shadow:var(--shadow); transform:translateY(-3px)}
+.sec-card h2{margin:0; font-size:20px; letter-spacing:-.02em}
+.sec-card p{margin:0; color:var(--muted); font-size:13.5px; line-height:1.65; max-width:42ch}
+.sec-ic{
+  width:58px; height:58px; border-radius:15px; display:grid; place-items:center;
+  background:var(--brand-soft); color:var(--brand); margin-bottom:6px;
+}
+.sec-pf .sec-ic{background:color-mix(in srgb,var(--teal) 14%,transparent); color:var(--teal)}
+.sec-go{margin-top:auto; display:flex; align-items:center; gap:6px;
+  font-size:13px; font-weight:650; color:var(--brand)}
+
+/* Portal çerçevesi — tam ekran */
+.pfp-wrap{position:fixed; inset:0; display:flex; flex-direction:column; background:var(--panel)}
+.pfp-bar{
+  display:flex; align-items:center; gap:14px; padding:0 16px; height:42px; flex-shrink:0;
+  background:var(--hero); color:#fff; font-size:12.5px;
+}
+.pfp-back{display:flex; align-items:center; gap:6px; opacity:.9; font-weight:600}
+.pfp-back:hover{opacity:1}
+.pfp-title{font-weight:650; letter-spacing:-.01em}
+.pfp-user{margin-left:auto; opacity:.85}
+.pfp-frame{flex:1; width:100%; border:0; display:block}

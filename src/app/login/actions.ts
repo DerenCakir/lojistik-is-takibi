@@ -15,5 +15,5 @@ export async function loginAction(_prev: unknown, formData: FormData) {
   if (!res.ok) {
     return { error: res.error };
   }
-  redirect("/");
+  redirect("/sec");
 }

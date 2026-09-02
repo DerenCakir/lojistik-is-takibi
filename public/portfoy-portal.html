@@ -2333,7 +2333,7 @@ function repStats(){
   return Object.values(R)}
 function repRows(){
   return repStats().map(x=>({ad:x.rep,n:x.n,lok:x.nl,sv:x.sv,gm:x.gm,yd:x.yd,o4:x.o4,
-    hrk:x.hrk,gp:x.gp,puan:0,liste:C.filter(c=>shares(c).some(s=>s.t===x.rep))}))}
+    hrk:x.hrk,gp:x.gp,puan:puanBul(x.rep),liste:C.filter(c=>shares(c).some(s=>s.t===x.rep))}))}
 function drawT(){
   const so=document.getElementById('tf-sort').value;
   const fdk=document.getElementById('tf-dk').value;
@@ -2593,17 +2593,17 @@ function xlsx(){
    'Malzeme Zorluğu Kademesi','Sipariş Tipi','Kim Ödüyor','Ekipman Kullanımı','Portal Kullanımı','Etiket','ASN',
    'Lokasyon Sayısı','Sevkiyat Yapılan Lokasyon','Toplam Sevkiyat','Toplam Giden Malzeme',
    'Lokasyon Başına Sevkiyat','En Büyük Lokasyon','Yoğunlaşma %','Cari Durumu','Eksik Alan','Ekip','Zorunlu Ek İşler','Zorunlu Ek İş Katsayısı'];
-  if(FXOK)H.push('Yük Puanı');
+  H.push('Zorluk Çarpanı','Hacim','Yük Katkısı');
   const A=[H];
   C.forEach(c=>{const a=ag(c);const r=[c.k,c.m,c.t,c.dk,c.sg,c.on,c.mz,c.st,c.ko,c.ek,c.pt,c.et,c.an,
     a.nl,a.al,a.sv,a.gm,lokbas(c),a.mx,yogun(c),durum(c),gaps(c),ekipAd[cariEkip(c)]||'',zekListe(c).join(' · '),zekKat(c)];
-    if(FXOK){let v=0;try{v=SCORE(c)}catch(e){}r.push(Math.round(v*100)/100)}A.push(r)});
+    r.push(Math.round(zorluk(c)*100)/100, Math.round(hacimEndeks(c)*100)/100, Math.round(yuk(c)*100)/100);A.push(r)});
   const B=[['Ana Cari','Malı Teslim Alan','Müşteri Adı','Dağıtım Kanalı','Yapılan Sevkiyat Sayısı','Giden Malzeme Sayısı']];
   L.forEach(x=>B.push([x.k,x.t,x.m,x.dk,x.s,x.g]));
   const RH=['Temsilci','Cari','Lokasyon','Sevkiyat','Malzeme Kodu','Yurtdışı','Önem 4','Hareketsiz','Eksik Hücre'];
   if(FXOK)RH.push('Yük Puanı');
   const R=[RH];
-  repRows().sort((a,b)=>b.puan-a.puan).forEach(x=>{const r=[x.ad,x.n,x.lok,x.sv,x.gm,x.yd,x.o4,x.hrk,x.gp];
+  const yv=(n,b)=>Math.round(n*Math.pow(10,b))/Math.pow(10,b);  repRows().sort((a,b)=>b.puan-a.puan).forEach(x=>{const r=[x.ad,yv(x.n,1),yv(x.lok,1),yv(x.sv,0),yv(x.gm,0),yv(x.yd,1),yv(x.o4,1),yv(x.hrk,1),yv(x.gp,1)];
     if(FXOK)r.push(Math.round(x.puan*100)/100);R.push(r)});
   const KS=[['KATSAYI TABLOSU',''],['Sütun','Seçenek','Katsayı','Kapsam (cari)']];
   const KGL={kanal:'Dağıtım kanalı',sg:'Segment',on:'Müşteri önemi',mz:'Malzeme zorluğu',

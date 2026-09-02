@@ -264,7 +264,7 @@ input[type=range]{width:100%;accent-color:var(--teal);height:16px}
 .dagad i.u3{color:#1D467E} .dagad i.u2{color:#0F6E6E} .dagad i.u1{color:var(--ink3)} .dagad i.u0{color:#B9A24A}
 .dagbar{height:6px;background:#E4E3DA;border-radius:2px;overflow:hidden}
 .dagbar b{display:block;height:100%}
-.dagpu{font-family:var(--mono);font-size:10px;font-weight:600;text-align:right}.dfark{display:block;font-size:9.5px;font-weight:700;margin-top:1px}#t tbody tr.pasif{opacity:.45}#t tbody tr.pasif .name{text-decoration:line-through}.dgatan{margin-bottom:12px;padding:11px 15px;border-radius:10px;cursor:pointer;background:#fdf1e3;border:1px solid #e8c89a;display:flex;gap:12px;align-items:baseline}.dgatan:hover{background:#fbe6cd}.dgatan b{color:#8a5a10;font-size:13px}.dgatan span{color:#a07a3a;font-size:11.5px}.dmeta2 .d.neg{color:#c0392b}.dmeta2 .d.pos{color:#1a7f37}.dfark.up{color:#1a7f37}.dfark.dn{color:#c0392b}
+.dagpu{font-family:var(--mono);font-size:10px;font-weight:600;text-align:right}.dfark{display:block;font-size:9.5px;font-weight:700;margin-top:1px}.mini tr.nokta-pasif{opacity:.42}.mini tr.nokta-pasif td:nth-child(3){text-decoration:line-through}.nokta-sw{display:flex;align-items:center;gap:5px;cursor:pointer;font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em}.nokta-sw input{margin:0}#t tbody tr.pasif{opacity:.45}#t tbody tr.pasif .name{text-decoration:line-through}.dgatan{margin-bottom:12px;padding:11px 15px;border-radius:10px;cursor:pointer;background:#fdf1e3;border:1px solid #e8c89a;display:flex;gap:12px;align-items:baseline}.dgatan:hover{background:#fbe6cd}.dgatan b{color:#8a5a10;font-size:13px}.dgatan span{color:#a07a3a;font-size:11.5px}.dmeta2 .d.neg{color:#c0392b}.dmeta2 .d.pos{color:#1a7f37}.dfark.up{color:#1a7f37}.dfark.dn{color:#c0392b}
 .turbox{border:1px solid var(--line);border-radius:3px;background:var(--panel);margin:0 15px 12px;padding:9px 12px}
 .turbas{display:flex;align-items:center;justify-content:space-between;font-family:var(--mono);
   font-size:9px;letter-spacing:.09em;color:var(--ink3);margin-bottom:7px}
@@ -831,7 +831,8 @@ function veriDonustur(D){
     return c;});
 
   const L=D.lokasyon.map(r=>({k:r.cari_kod,t:r.kod,m:r.ad,dk:r.kanal,
-                              s:+r.sevkiyat,g:+r.malzeme_kodu}));
+                              s:+r.sevkiyat,g:+r.malzeme_kodu,
+                              ak:r.aktif!==false}));   /* teslim noktasi durumu */
   const KAT={};
   for(const r of D.katsayi)(KAT[r.grup]||(KAT[r.grup]={}))[r.anahtar]=+r.deger;
   const P={};
@@ -1025,7 +1026,9 @@ async function saveAll(){
     const p={tip:'tam_kayit',
       cari:C.map(c=>({k:c.k,sg:c.sg,on:c.on,mz:c.mz,st:c.st,ko:c.ko,
         ek:c.ek,pt:c.pt,et:c.et,an:c.an,ak:c.ak,t:c.t,sp:c.sp,zek:c.zek})),
-      ekip:EKIP,unvan:UNVAN,zekl:ZEKL,gont:GONT,gon:GON};
+      ekip:EKIP,unvan:UNVAN,zekl:ZEKL,gont:GONT,gon:GON,
+      /* Yalniz PASIF noktalar gonderilir; gerisi aktif sayilir. */
+      pasifNokta:L.filter(x=>x.ak===false).map(x=>({k:x.k,t:x.t}))};
     /* Katsayi ve parametreleri yalniz mudur gonderebilir. */
     if(ROL==='duzenle_tumu'){
       p.kat=KAT;
@@ -1104,7 +1107,7 @@ function draw(){
   }).join('')||`<tr><td colspan="23" style="padding:20px;text-align:center;color:var(--ink3)">Bu filtreyle eşleşen cari yok.</td></tr>`;
   document.getElementById('cnt').textContent=`${r.length} cari listeleniyor`;
   document.getElementById('sel').innerHTML=`eksik hücre <b>${r.reduce((a,c)=>a+gaps(c),0)}</b> · sevkiyat <b>${ni(r.reduce((a,c)=>a+ag(c).sv,0))}</b> · lokasyon <b>${r.reduce((a,c)=>a+ag(c).nl,0)}</b>`;
-  arrows('#t',sk,sd);progress();
+  document.querySelectorAll('[data-nk]').forEach(i=>i.onchange=()=>{    const l=(LOK[i.dataset.nk]||[]).find(x=>String(x.t)===i.dataset.nt);    if(l){l.ak=i.checked;touched('veri');      i.closest('tr').classList.toggle('nokta-pasif',!i.checked);      i.nextElementSibling.textContent=i.checked?'aktif':'pasif'}});  arrows('#t',sk,sd);progress();
 }
 function zekHucre(c){
   const L=zekListe(c);
@@ -1150,13 +1153,23 @@ function splitEditor(c){
     <div class="khint">Sevkiyat, teslim noktası, malzeme kodu ve puan bu yüzdelere göre bölünür.</div></div>`}
 function subRow(c,span){
   const ls=(LOK[c.k]||[]).slice().sort((a,b)=>b.s-a.s),a=ag(c);
+  const pasif=ls.filter(x=>x.ak===false).length;
   return `<tr class="sub"><td colspan="${span}"><div class="subbox">
    ${splitEditor(c)}
    ${zekEditor(c)}
-   <div class="eyebrow" style="margin:12px 0 5px">${ls.length} malı teslim alan · ${ni(a.sv)} sevkiyat · ${ni(a.gm)} malzeme kodu</div>
-   <table class="mini"><thead><tr><th>Malı teslim alan</th><th>Ad</th><th style="text-align:right">Sevkiyat</th>
+   <div class="eyebrow" style="margin:12px 0 5px">${ls.length} malı teslim alan · ${ni(a.sv)} sevkiyat · ${ni(a.gm)} malzeme kodu${
+     pasif?` · <b style="color:var(--rust)">${pasif} pasif</b>`:''}</div>
+   <div class="note" style="margin-bottom:6px">
+     Pasife aldığın teslim noktası hacme girmez — ne sayısı, ne sevkiyatı, ne malzemesi.
+     Aynı carinin diğer noktaları normal sayılmaya devam eder.
+     Etkisi <b>Kaydet</b>'ten sonra görünür.</div>
+   <table class="mini"><thead><tr><th style="width:54px">Durum</th>
+   <th>Malı teslim alan</th><th>Ad</th><th style="text-align:right">Sevkiyat</th>
    <th style="text-align:right">Malzeme kodu</th><th style="text-align:right">Payı</th></tr></thead><tbody>
-   ${ls.map(x=>`<tr><td class="k">${esc(x.t)}</td><td>${esc(x.m)}</td><td class="num k">${ni(x.s)}</td>
+   ${ls.map(x=>`<tr class="${x.ak===false?'nokta-pasif':''}">
+     <td><label class="nokta-sw"><input type="checkbox" data-nk="${esc(c.k)}" data-nt="${esc(x.t)}"
+       ${x.ak===false?'':'checked'}><span>${x.ak===false?'pasif':'aktif'}</span></label></td>
+     <td class="k">${esc(x.t)}</td><td>${esc(x.m)}</td><td class="num k">${ni(x.s)}</td>
      <td class="num k">${ni(x.g)}</td><td class="num k">${a.sv?Math.round(x.s/a.sv*100):0}%</td></tr>`).join('')}
    </tbody></table></div></td></tr>`;
 }

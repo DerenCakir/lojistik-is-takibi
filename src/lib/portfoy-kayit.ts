@@ -28,6 +28,7 @@ export type TamKayit = {
   zekl?: { ad: string; kat: number }[];      // zorunlu ek iş türleri
   gont?: { ad: string; p: number }[];        // gönüllü ek iş türleri
   gon?: { ad: string; t: string; ac?: string; p: number }[]; // gönüllü kayıtlar
+  pasifNokta?: { k: string; t: string }[];   // pasife alinan mali teslim alanlar
   ag?: Record<string, number>;               // wsv, wnl, wgm, olcek, us, kat
   kat?: Record<string, Record<string, number>>; // katsayı tablosu
 };
@@ -256,6 +257,33 @@ export async function tamKayit(tx: Tx, veri: TamKayit, kullanici: string, tamYet
       await tx.$executeRaw`
         insert into portfoy.cari_zorunlu (cari_kod, zorunlu_tur_id)
         values ${Prisma.join(zekSatir)} on conflict do nothing`;
+    }
+  }
+
+  // ---------- malı teslim alan durumu ----------
+  // Yalnız pasif olanlar gönderilir; listede olmayan her nokta aktife döner.
+  // Böylece bir noktayı geri açmak da tek adımda olur.
+  if (veri.pasifNokta) {
+    const oncekiPasif = new Set((await tx.$queryRaw<{ cari_kod: string; kod: string }[]>`
+      select cari_kod, kod from portfoy.teslim_noktasi where not aktif`)
+      .map((r) => `${r.cari_kod}|${r.kod}`));
+    const yeniPasif = new Set(veri.pasifNokta.map((n) => `${n.k}|${n.t}`));
+
+    await tx.$executeRaw`update portfoy.teslim_noktasi set aktif = true where not aktif`;
+    if (veri.pasifNokta.length) {
+      const cift = veri.pasifNokta.map((n) => Prisma.sql`(${n.k}, ${n.t})`);
+      await tx.$executeRaw`
+        update portfoy.teslim_noktasi t set aktif = false
+        from (values ${Prisma.join(cift)}) as v(cari_kod, kod)
+        where t.cari_kod = v.cari_kod and t.kod = v.kod`;
+    }
+    for (const a of yeniPasif) if (!oncekiPasif.has(a)) {
+      const [k, t] = a.split("|");
+      not("teslim_noktasi", k, `teslim noktası ${t}`, "Aktif", "Pasif");
+    }
+    for (const a of oncekiPasif) if (!yeniPasif.has(a)) {
+      const [k, t] = a.split("|");
+      not("teslim_noktasi", k, `teslim noktası ${t}`, "Pasif", "Aktif");
     }
   }
 

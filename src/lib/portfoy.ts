@@ -240,7 +240,8 @@ export async function anlikVeri() {
     q(`select kod, ad, kanal, segment, onem, zorluk, siparis_tipi,
               kim_oduyor, ekipman, portal, etiket, asn, aktif
          from portfoy.cari order by kod`),
-    q(`select cari_kod, kod, ad, kanal, sevkiyat, malzeme_kodu from portfoy.teslim_noktasi`),
+    q(`select cari_kod, kod, ad, kanal, sevkiyat, malzeme_kodu, aktif
+         from portfoy.teslim_noktasi`),
     q(`select id, ad, katsayi from portfoy.zorunlu_tur order by id`),
     q(`select cari_kod, zorunlu_tur_id from portfoy.cari_zorunlu`),
     q(`select id, ad, puan from portfoy.gonullu_tur order by id`),

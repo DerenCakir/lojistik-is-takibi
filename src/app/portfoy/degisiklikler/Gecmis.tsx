@@ -10,6 +10,7 @@ const BASLIK: Record<string, string> = {
   cari_zorunlu: "Zorunlu ek iş",
   portfoy: "Temsilci ataması",
   temsilci: "Temsilci kadrosu",
+  teslim_noktasi: "Teslim noktası durumu",
   "(tam kayit)": "Kaydetme",
   "(veri yukleme)": "Excel veri yükleme",
 };

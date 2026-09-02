@@ -104,6 +104,47 @@ export async function tamKayit(tx: Tx, veri: TamKayit, kullanici: string, tamYet
     select id, ad from portfoy.gonullu_tur`;
   const gid = new Map(gRows.map((r) => [r.ad, Number(r.id)]));
 
+  // ---------- değişiklik tespiti ----------
+  // Yazmadan önceki hâl okunur; sonra satır satır karşılaştırılıp YALNIZ
+  // değişenler loglanır. Özet log ("336 cari kaydedildi") kimin ne zaman
+  // kaydettiğini söylüyor ama ne değiştirdiğini söylemiyordu.
+  type OncekiCari = {
+    kod: string; segment: string | null; onem: number | null; zorluk: number | null;
+    siparis_tipi: string | null; kim_oduyor: string | null; ekipman: string | null;
+    portal: string | null; etiket: string | null; asn: string | null;
+  };
+  const oncekiCari = new Map((await tx.$queryRaw<OncekiCari[]>`
+    select kod, segment, onem, zorluk, siparis_tipi, kim_oduyor,
+           ekipman, portal, etiket, asn from portfoy.cari`).map((r) => [r.kod, r]));
+
+  const adaGore = new Map([...tid].map(([ad, id]) => [id, ad]));
+  const oncekiPay = new Map<string, string>();
+  for (const r of await tx.$queryRaw<{ cari_kod: string; temsilci_id: bigint; pay: unknown }[]>`
+      select cari_kod, temsilci_id, pay from portfoy.portfoy order by pay desc, temsilci_id`) {
+    const ad = adaGore.get(Number(r.temsilci_id)) ?? "?";
+    const p = Number(r.pay);
+    const parca = p >= 99.99 ? ad : `${ad} %${Math.round(p)}`;
+    oncekiPay.set(r.cari_kod, oncekiPay.has(r.cari_kod)
+      ? `${oncekiPay.get(r.cari_kod)} · ${parca}` : parca);
+  }
+
+  const zAda = new Map([...zid].map(([ad, id]) => [id, ad]));
+  const oncekiZek = new Map<string, string[]>();
+  for (const r of await tx.$queryRaw<{ cari_kod: string; zorunlu_tur_id: bigint }[]>`
+      select cari_kod, zorunlu_tur_id from portfoy.cari_zorunlu`) {
+    const l = oncekiZek.get(r.cari_kod) ?? [];
+    l.push(zAda.get(Number(r.zorunlu_tur_id)) ?? "?");
+    oncekiZek.set(r.cari_kod, l);
+  }
+
+  const kayitlar: ReturnType<typeof Prisma.sql>[] = [];
+  const not = (tablo: string, kod: string, alanAd: string,
+               eski: string | null, yeni: string | null) => {
+    if ((eski ?? "") === (yeni ?? "")) return;
+    kayitlar.push(Prisma.sql`(${tablo}, ${kod}, ${alanAd},
+                              ${eski || null}, ${yeni || null}, ${kullanici})`);
+  };
+
   // ---------- cariler: sınıflandırma + atama + zorunlu ek işler ----------
   //
   // TOPLU YAZMA. Eskiden her cari icin ayri sorgu atiliyordu: 336 cari x ~5
@@ -137,6 +178,38 @@ export async function tamKayit(tx: Tx, veri: TamKayit, kullanici: string, tamYet
              siparis_tipi, kim_oduyor, ekipman, portal, etiket, asn)
       where c.kod = v.kod`;
     sayac.cari = cariler.length;
+
+    // ---- neler değişti ----
+    const ALAN_AD: Record<string, string> = {
+      sg: "segment", on: "önem", mz: "zorluk", st: "sipariş tipi",
+      ko: "kim ödüyor", ek: "ekipman", pt: "portal", et: "etiket", an: "ASN",
+    };
+    for (const c of cariler) {
+      const o = oncekiCari.get(c.k);
+      if (!o) continue;
+      not("cari", c.k, ALAN_AD.sg, o.segment, alan("segment", c.sg));
+      not("cari", c.k, ALAN_AD.on, o.onem === null ? null : String(o.onem), alan("onem", c.on));
+      not("cari", c.k, ALAN_AD.mz, o.zorluk === null ? null : String(o.zorluk), alan("zorluk", c.mz));
+      not("cari", c.k, ALAN_AD.st, o.siparis_tipi, alan("siparis_tipi", c.st));
+      not("cari", c.k, ALAN_AD.ko, o.kim_oduyor, alan("kim_oduyor", c.ko));
+      not("cari", c.k, ALAN_AD.ek, o.ekipman, alan("ekipman", c.ek));
+      not("cari", c.k, ALAN_AD.pt, o.portal, alan("portal", c.pt));
+      not("cari", c.k, ALAN_AD.et, o.etiket, alan("etiket", c.et));
+      not("cari", c.k, ALAN_AD.an, o.asn, alan("asn", c.an));
+
+      // atama
+      const paylar = (c.sp ?? []).filter((s2) => s2?.t && Number(s2.pct) > 0);
+      const yeniPay = paylar.length
+        ? [...paylar].sort((a, b) => b.pct - a.pct)
+            .map((s2) => (s2.pct >= 99.99 ? s2.t : `${s2.t} %${Math.round(s2.pct)}`)).join(" · ")
+        : (c.t && c.t !== "(atanmamış)" ? c.t : "");
+      not("portfoy", c.k, "temsilci", oncekiPay.get(c.k) ?? "", yeniPay);
+
+      // zorunlu ek işler
+      const eskiZ = (oncekiZek.get(c.k) ?? []).slice().sort().join(", ");
+      const yeniZ = (c.zek ?? []).slice().sort().join(", ");
+      not("cari_zorunlu", c.k, "zorunlu ek iş", eskiZ, yeniZ);
+    }
 
     const kodlar = cariler.map((c) => c.k);
 
@@ -220,9 +293,17 @@ export async function tamKayit(tx: Tx, veri: TamKayit, kullanici: string, tamYet
   await tx.$executeRaw`
     insert into portfoy.degisiklik_log (tablo, kayit_id, alan, yeni, kullanici)
     values ('(tam kayit)', '-', 'kaydet',
-            ${`${sayac.cari} cari · ${sayac.atama} atama · ${sayac.zorunlu} zorunlu · ` +
-              `${sayac.gonullu} gönüllü · ${sayac.katsayi} katsayı`},
+            ${kayitlar.length ? `${kayitlar.length} değişiklik` : "değişiklik yok"},
             ${kullanici})`;
 
-  return sayac;
+  // Alan bazlı kayıtlar — kim, neyi, neden neye çevirdi.
+  if (kayitlar.length) {
+    for (let i = 0; i < kayitlar.length; i += 500) {
+      await tx.$executeRaw`
+        insert into portfoy.degisiklik_log (tablo, kayit_id, alan, eski, yeni, kullanici)
+        values ${Prisma.join(kayitlar.slice(i, i + 500))}`;
+    }
+  }
+
+  return { ...sayac, degisiklik: kayitlar.length };
 }

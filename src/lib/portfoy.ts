@@ -269,6 +269,7 @@ export type Degisiklik = {
   id: number; ts: string; kullanici: string | null;
   tablo: string; kayit_id: string; alan: string | null;
   eski: string | null; yeni: string | null;
+  cari_ad: string | null;   // kayit_id bir cari koduysa adı
 };
 
 /** Son değişiklik — portal başlığında gösterilir. */
@@ -280,15 +281,18 @@ export async function sonDegisiklik(): Promise<{ kullanici: string; ts: Date } |
 }
 
 /** Değişiklik geçmişi. */
-export async function degisiklikler(limit = 300): Promise<Degisiklik[]> {
+export async function degisiklikler(limit = 2000): Promise<Degisiklik[]> {
   const r = await db.$queryRaw<Record<string, unknown>[]>`
-    select id, ts, kullanici, tablo, kayit_id, alan, eski, yeni
-    from portfoy.degisiklik_log order by ts desc, id desc limit ${limit}`;
+    select l.id, l.ts, l.kullanici, l.tablo, l.kayit_id, l.alan, l.eski, l.yeni,
+           c.ad as cari_ad
+    from portfoy.degisiklik_log l
+    left join portfoy.cari c on c.kod = l.kayit_id
+    order by l.ts desc, l.id desc limit ${limit}`;
   return r.map((x) => ({
     id: Number(x.id), ts: String(x.ts), kullanici: (x.kullanici as string) ?? null,
     tablo: String(x.tablo), kayit_id: String(x.kayit_id),
     alan: (x.alan as string) ?? null, eski: (x.eski as string) ?? null,
-    yeni: (x.yeni as string) ?? null,
+    yeni: (x.yeni as string) ?? null, cari_ad: (x.cari_ad as string) ?? null,
   }));
 }
 

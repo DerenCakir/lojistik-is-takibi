@@ -264,7 +264,7 @@ input[type=range]{width:100%;accent-color:var(--teal);height:16px}
 .dagad i.u3{color:#1D467E} .dagad i.u2{color:#0F6E6E} .dagad i.u1{color:var(--ink3)} .dagad i.u0{color:#B9A24A}
 .dagbar{height:6px;background:#E4E3DA;border-radius:2px;overflow:hidden}
 .dagbar b{display:block;height:100%}
-.dagpu{font-family:var(--mono);font-size:10px;font-weight:600;text-align:right}.dfark{display:block;font-size:9.5px;font-weight:700;margin-top:1px}.mini tr.nokta-pasif{opacity:.42}.mini tr.nokta-pasif td:nth-child(3){text-decoration:line-through}.nokta-sw{display:flex;align-items:center;gap:5px;cursor:pointer;font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em}.nokta-sw input{margin:0}#t tbody tr.pasif{opacity:.45}#t tbody tr.pasif .name{text-decoration:line-through}.dgatan{margin-bottom:12px;padding:11px 15px;border-radius:10px;cursor:pointer;background:#fdf1e3;border:1px solid #e8c89a;display:flex;gap:12px;align-items:baseline}.dgatan:hover{background:#fbe6cd}.dgatan b{color:#8a5a10;font-size:13px}.dgatan span{color:#a07a3a;font-size:11.5px}.dmeta2 .d.neg{color:#c0392b}.dmeta2 .d.pos{color:#1a7f37}.dfark.up{color:#1a7f37}.dfark.dn{color:#c0392b}
+.dagpu{font-family:var(--mono);font-size:10px;font-weight:600;text-align:right}.dfark{display:block;font-size:9.5px;font-weight:700;margin-top:1px}.mini tr.nokta-pasif{opacity:.42}tr.nokta-pasif{opacity:.45}.pasifet{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--rust);border:1px solid var(--rust);border-radius:3px;padding:0 3px;margin-left:4px}.mini tr.nokta-pasif td:nth-child(3){text-decoration:line-through}.nokta-sw{display:flex;align-items:center;gap:5px;cursor:pointer;font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em}.nokta-sw input{margin:0}#t tbody tr.pasif{opacity:.45}#t tbody tr.pasif .name{text-decoration:line-through}.dgatan{margin-bottom:12px;padding:11px 15px;border-radius:10px;cursor:pointer;background:#fdf1e3;border:1px solid #e8c89a;display:flex;gap:12px;align-items:baseline}.dgatan:hover{background:#fbe6cd}.dgatan b{color:#8a5a10;font-size:13px}.dgatan span{color:#a07a3a;font-size:11.5px}.dmeta2 .d.neg{color:#c0392b}.dmeta2 .d.pos{color:#1a7f37}.dfark.up{color:#1a7f37}.dfark.dn{color:#c0392b}
 .turbox{border:1px solid var(--line);border-radius:3px;background:var(--panel);margin:0 15px 12px;padding:9px 12px}
 .turbas{display:flex;align-items:center;justify-content:space-between;font-family:var(--mono);
   font-size:9px;letter-spacing:.09em;color:var(--ink3);margin-bottom:7px}
@@ -1906,7 +1906,7 @@ function drawMD(rankMap,all){
 
     ${ls.length?`<div class="dsec"><h5>${ls.length} malı teslim alan</h5>
       <table class="ctable"><tbody>
-      ${ls.map(x=>`<tr><td class="nm">${esc(x.t)}</td><td style="font-size:11px;white-space:normal">${esc(x.m)}</td>
+      ${ls.map(x=>`<tr class="${x.ak===false?'nokta-pasif':''}"><td class="nm">${esc(x.t)}${x.ak===false?' <span class="pasifet">pasif</span>':''}</td><td style="font-size:11px;white-space:normal">${esc(x.m)}</td>
         <td class="rw">${ni(x.s)}</td><td class="pc">${a.sv?Math.round(x.s/a.sv*100):0}%</td></tr>`).join('')}
       </tbody></table></div>`:''}
   </div>`;

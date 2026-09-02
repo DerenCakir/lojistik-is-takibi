@@ -18,6 +18,7 @@ export type TamKayit = {
     sg?: string | null; on?: number | string | null; mz?: number | string | null;
     st?: string | null; ko?: string | null; ek?: string | null; pt?: string | null;
     et?: string | null; an?: string | null;
+    ak?: string | null;                      // 'Aktif' | 'Pasif'
     t?: string | null;                       // tek temsilci adı
     sp?: { t: string; pct: number }[];       // bölüşüm
     zek?: string[];                          // zorunlu ek iş adları
@@ -112,10 +113,11 @@ export async function tamKayit(tx: Tx, veri: TamKayit, kullanici: string, tamYet
     kod: string; segment: string | null; onem: number | null; zorluk: number | null;
     siparis_tipi: string | null; kim_oduyor: string | null; ekipman: string | null;
     portal: string | null; etiket: string | null; asn: string | null;
+    aktif: boolean;
   };
   const oncekiCari = new Map((await tx.$queryRaw<OncekiCari[]>`
     select kod, segment, onem, zorluk, siparis_tipi, kim_oduyor,
-           ekipman, portal, etiket, asn from portfoy.cari`).map((r) => [r.kod, r]));
+           ekipman, portal, etiket, asn, aktif from portfoy.cari`).map((r) => [r.kod, r]));
 
   const adaGore = new Map([...tid].map(([ad, id]) => [id, ad]));
   const oncekiPay = new Map<string, string>();
@@ -160,7 +162,8 @@ export async function tamKayit(tx: Tx, veri: TamKayit, kullanici: string, tamYet
       ${bos(alan("onem", c.on))}, ${bos(alan("zorluk", c.mz))},
       ${bos(alan("siparis_tipi", c.st))}, ${bos(alan("kim_oduyor", c.ko))},
       ${bos(alan("ekipman", c.ek))}, ${bos(alan("portal", c.pt))},
-      ${bos(alan("etiket", c.et))}, ${bos(alan("asn", c.an))})`);
+      ${bos(alan("etiket", c.et))}, ${bos(alan("asn", c.an))},
+      ${c.ak === "Pasif" ? "f" : "t"})`);
 
     await tx.$executeRaw`
       update portfoy.cari c set
@@ -173,9 +176,10 @@ export async function tamKayit(tx: Tx, veri: TamKayit, kullanici: string, tamYet
         portal       = nullif(v.portal, ''),
         etiket       = nullif(v.etiket, ''),
         asn          = nullif(v.asn, ''),
+        aktif        = (v.aktif = 't'),
         guncelleme   = now()
       from (values ${Prisma.join(satirlar)}) as v(kod, segment, onem, zorluk,
-             siparis_tipi, kim_oduyor, ekipman, portal, etiket, asn)
+             siparis_tipi, kim_oduyor, ekipman, portal, etiket, asn, aktif)
       where c.kod = v.kod`;
     sayac.cari = cariler.length;
 
@@ -196,6 +200,8 @@ export async function tamKayit(tx: Tx, veri: TamKayit, kullanici: string, tamYet
       not("cari", c.k, ALAN_AD.pt, o.portal, alan("portal", c.pt));
       not("cari", c.k, ALAN_AD.et, o.etiket, alan("etiket", c.et));
       not("cari", c.k, ALAN_AD.an, o.asn, alan("asn", c.an));
+      not("cari", c.k, "durum", o.aktif ? "Aktif" : "Pasif",
+          c.ak === "Pasif" ? "Pasif" : "Aktif");
 
       // atama
       const paylar = (c.sp ?? []).filter((s2) => s2?.t && Number(s2.pct) > 0);

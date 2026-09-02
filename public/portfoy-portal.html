@@ -264,7 +264,7 @@ input[type=range]{width:100%;accent-color:var(--teal);height:16px}
 .dagad i.u3{color:#1D467E} .dagad i.u2{color:#0F6E6E} .dagad i.u1{color:var(--ink3)} .dagad i.u0{color:#B9A24A}
 .dagbar{height:6px;background:#E4E3DA;border-radius:2px;overflow:hidden}
 .dagbar b{display:block;height:100%}
-.dagpu{font-family:var(--mono);font-size:10px;font-weight:600;text-align:right}.dfark{display:block;font-size:9.5px;font-weight:700;margin-top:1px}.dgatan{margin-bottom:12px;padding:11px 15px;border-radius:10px;cursor:pointer;background:#fdf1e3;border:1px solid #e8c89a;display:flex;gap:12px;align-items:baseline}.dgatan:hover{background:#fbe6cd}.dgatan b{color:#8a5a10;font-size:13px}.dgatan span{color:#a07a3a;font-size:11.5px}.dmeta2 .d.neg{color:#c0392b}.dmeta2 .d.pos{color:#1a7f37}.dfark.up{color:#1a7f37}.dfark.dn{color:#c0392b}
+.dagpu{font-family:var(--mono);font-size:10px;font-weight:600;text-align:right}.dfark{display:block;font-size:9.5px;font-weight:700;margin-top:1px}#t tbody tr.pasif{opacity:.45}#t tbody tr.pasif .name{text-decoration:line-through}.dgatan{margin-bottom:12px;padding:11px 15px;border-radius:10px;cursor:pointer;background:#fdf1e3;border:1px solid #e8c89a;display:flex;gap:12px;align-items:baseline}.dgatan:hover{background:#fbe6cd}.dgatan b{color:#8a5a10;font-size:13px}.dgatan span{color:#a07a3a;font-size:11.5px}.dmeta2 .d.neg{color:#c0392b}.dmeta2 .d.pos{color:#1a7f37}.dfark.up{color:#1a7f37}.dfark.dn{color:#c0392b}
 .turbox{border:1px solid var(--line);border-radius:3px;background:var(--panel);margin:0 15px 12px;padding:9px 12px}
 .turbas{display:flex;align-items:center;justify-content:space-between;font-family:var(--mono);
   font-size:9px;letter-spacing:.09em;color:var(--ink3);margin-bottom:7px}
@@ -490,7 +490,7 @@ table.calc tr.tot td{border-top:1px solid var(--line);border-bottom:none;backgro
         <th data-s="t">Temsilci</th><th data-s="dk">Kanal</th><th data-s="sg">Segment</th>
         <th data-s="on" class="num">Önem</th><th data-s="mz" class="num">Malzeme</th>
         <th data-s="st">Sipariş tipi</th><th data-s="ko">Kim ödüyor</th>
-        <th data-s="ek">Ekipman</th><th data-s="pt">Portal</th><th data-s="et">Etiket</th><th data-s="an">ASN</th><th>Zorunlu ek iş</th>
+        <th data-s="ek">Ekipman</th><th data-s="pt">Portal</th><th data-s="et">Etiket</th><th data-s="an">ASN</th><th data-s="ak">Durum</th><th>Zorunlu ek iş</th>
         <th data-s="nl" class="num calc">Lok.</th><th data-s="al" class="num calc">Aktif lok.</th>
         <th data-s="sv" class="num calc">Sevkiyat</th><th data-s="gm" class="num calc">Malz. kodu</th>
         <th data-s="ls" class="num calc">Lok. başına</th><th data-s="du" class="calc">Durum</th>
@@ -819,6 +819,7 @@ function veriDonustur(D){
     const c={k:r.kod,m:r.ad,dk:r.kanal,sg:r.segment||'',
       on:r.onem||'',mz:r.zorluk||'',st:r.siparis_tipi||'',ko:r.kim_oduyor||'',
       ek:r.ekipman||'',pt:r.portal||'',et:r.etiket||'',an:r.asn||'',
+      ak:r.aktif===false?'Pasif':'Aktif',   /* musteri durumu */
       t:atanmis?sh[0].t:'',
       /* --- view'lerden gelen HAZIR degerler; portal bunlari hesaplamaz --- */
       _ag:{nl:+y.nl||0,al:+y.al||0,sv:+y.sv||0,gm:+y.gm||0,mx:+y.mx||0},
@@ -969,7 +970,8 @@ const ekipOf=t=>EKIP[t]||'';
 const cariEkip=c=>{const sh=shares(c);return sh.length?ekipOf(sh[0].t):''};
 const OPT={t:TEM,sg:SEG,on:[1,2,3,4],mz:[1,2,3,4],st:['EDI','MANUEL'],ko:['Müşteri','NORM CİVATA'],
  ek:['var','yok'],pt:['Aktif kullanılıyor','Bazen kullanılıyor','Hiç kullanılmıyor'],et:['var','yok'],an:['var','yok']};
-const WC={t:'w-t',sg:'w-sg',on:'w-n',mz:'w-n',st:'w-st',ko:'w-ko',ek:'w-vy',pt:'w-pt',et:'w-vy',an:'w-vy'};
+OPT.ak=['Aktif','Pasif'];   /* musteri durumu */
+const WC={ak:'w-vy',t:'w-t',sg:'w-sg',on:'w-n',mz:'w-n',st:'w-st',ko:'w-ko',ek:'w-vy',pt:'w-pt',et:'w-vy',an:'w-vy'};
 
 const AGG={},LOK={};
 L.forEach(r=>{const a=AGG[r.k]||(AGG[r.k]={nl:0,al:0,sv:0,gm:0,mx:0});a.nl++;a.sv+=r.s;a.gm+=r.g;
@@ -1022,7 +1024,7 @@ async function saveAll(){
        zorunlu/gonullu ek isler, ekip/unvan. Sunucu tek transaction'da yazar. */
     const p={tip:'tam_kayit',
       cari:C.map(c=>({k:c.k,sg:c.sg,on:c.on,mz:c.mz,st:c.st,ko:c.ko,
-        ek:c.ek,pt:c.pt,et:c.et,an:c.an,t:c.t,sp:c.sp,zek:c.zek})),
+        ek:c.ek,pt:c.pt,et:c.et,an:c.an,ak:c.ak,t:c.t,sp:c.sp,zek:c.zek})),
       ekip:EKIP,unvan:UNVAN,zekl:ZEKL,gont:GONT,gon:GON};
     /* Katsayi ve parametreleri yalniz mudur gonderebilir. */
     if(ROL==='duzenle_tumu'){
@@ -1086,20 +1088,20 @@ function draw(){
   const r=rowsF(),mx=Math.max(...C.map(c=>ag(c).sv),1);
   document.querySelector('#t tbody').innerHTML=r.map(c=>{
     const a=ag(c),g=gaps(c),d=durum(c),cl=d==='Hareketsiz'?'hrk':(d==='Düşük hareketli'?'dus':'akt');
-    const main=`<tr><td><span class="exp" data-x="${c.k}">${open.has(c.k)?'−':'+'}</span></td>
+    const main=`<tr class="${c.ak==='Pasif'?'pasif':''}"><td><span class="exp" data-x="${c.k}">${open.has(c.k)?'−':'+'}</span></td>
       <td class="k">${esc(c.k)}</td><td class="name">${esc(c.m)}</td>
       <td class="editc${(!c.t&&!(c.sp&&c.sp.length))?' gapc':''}">${temHucre(c)}</td>
       <td><span class="badge ${c.dk===20?'yd':''}">${c.dk}</span></td>
       ${cell(c,'sg')}${cell(c,'on')}${cell(c,'mz')}${cell(c,'st')}${cell(c,'ko')}
-      ${cell(c,'ek')}${cell(c,'pt')}${cell(c,'et')}${cell(c,'an')}
+      ${cell(c,'ek')}${cell(c,'pt')}${cell(c,'et')}${cell(c,'an')}${cell(c,'ak')}
       <td class="editc">${zekHucre(c)}</td>
       <td class="num k">${a.nl}</td><td class="num k">${a.al}</td>
       <td class="num k">${ni(a.sv)}<span class="bar" style="width:${Math.max(2,a.sv/mx*32)}px"></span></td>
       <td class="num k">${ni(a.gm)}</td><td class="num k">${lokbas(c)}</td>
       <td><span class="badge ${cl}">${d}</span></td>
       <td class="gapn ${g===0?'z':(g>=9?'hi':'')}">${g}</td></tr>`;
-    return open.has(c.k)?main+subRow(c,22):main;
-  }).join('')||`<tr><td colspan="22" style="padding:20px;text-align:center;color:var(--ink3)">Bu filtreyle eşleşen cari yok.</td></tr>`;
+    return open.has(c.k)?main+subRow(c,23):main;
+  }).join('')||`<tr><td colspan="23" style="padding:20px;text-align:center;color:var(--ink3)">Bu filtreyle eşleşen cari yok.</td></tr>`;
   document.getElementById('cnt').textContent=`${r.length} cari listeleniyor`;
   document.getElementById('sel').innerHTML=`eksik hücre <b>${r.reduce((a,c)=>a+gaps(c),0)}</b> · sevkiyat <b>${ni(r.reduce((a,c)=>a+ag(c).sv,0))}</b> · lokasyon <b>${r.reduce((a,c)=>a+ag(c).nl,0)}</b>`;
   arrows('#t',sk,sd);progress();

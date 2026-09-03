@@ -428,9 +428,391 @@ table.calc tr.tot td{border-top:1px solid var(--line);border-bottom:none;backgro
 .hesapsatir b{font-size:16px}
 .adim .khint{padding:0 10px 9px;font-size:10.5px}
 </style>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Barlow+Condensed:wght@700;900&display=swap" rel="stylesheet">
+<style id="norm-tema">
+/* =====================================================================
+   NORM TEMA — ACIK TEMA · portala giydirme katmani
+   Mevcut CSS'e DOKUNMAZ, uzerine biner. Kaldirmak icin bu blogu silmek
+   yeterlidir; portal eski haline doner.
+
+   Yontem: portal butun renklerini :root degiskenlerinden aliyor. Once o
+   degiskenleri NORM paletine cevirdim, sonra rengi kodun icine gomulu
+   yazilmis yerleri tek tek ele aldim.
+
+   Menu YUKARIDA kalir (kenar cubugu denendi, sayfayi daraltip ust ustne
+   bindirdigi icin geri alindi).
+   ===================================================================== */
+
+:root{
+  /* --- NORM paleti · acik tema (spec: [data-theme="light"]) --- */
+  --n-bg:      #eef3f9;
+  --n-card:    #ffffff;
+  --n-card-h:  #f4f8fc;
+  --n-border:  #e2e9f3;
+  --n-border-h:#c9d8ec;
+  --n-text:    #15243b;
+  --n-muted:   #5b6c85;
+  --n-faint:   #6b7f9b;
+  --n-accent:  #2f6fc4;
+  --n-accent-d:#20518f;
+  --n-deep:    #005289;
+  --n-danger:  #c0442a;
+  --n-shadow:    0 2px 8px rgba(15,23,42,.06), 0 1px 2px rgba(15,23,42,.04);
+  --n-shadow-lg: 0 8px 24px rgba(15,23,42,.08), 0 2px 6px rgba(15,23,42,.05);
+  --th: 56px;
+
+  /* --- portalin kendi degiskenleri, NORM'a cevrildi --- */
+  --paper:  var(--n-bg);
+  --panel:  var(--n-card);
+  --ink:    var(--n-text);
+  --ink2:   var(--n-muted);
+  --ink3:   var(--n-faint);
+  --line:   var(--n-border);
+  --soft:   #eaf0f8;
+  --teal:   var(--n-accent);
+  --tealbg: #e4edf9;
+  --amber:  #b5820e;
+  --amberbg:#fdf4dd;
+  --rust:   #c0442a;
+  --rustbg: #fbe6e0;
+  --slate:  #5b6c85;
+  --gap:    #fdf7e6;    /* eksik hucre — sari deniz yerine ima */
+  --sans: "Inter",-apple-system,"Segoe UI",sans-serif;
+}
+
+/* ---------------------------------------------------------------------
+   Zemin — acik gri-mavi, iki noktadan cok hafif isik
+   --------------------------------------------------------------------- */
+body{
+  background:
+    radial-gradient(1100px 620px at 88% -10%, rgba(47,111,196,.07), transparent 62%),
+    radial-gradient(900px 560px at -6% 108%, rgba(47,111,196,.06), transparent 64%),
+    var(--n-bg) !important;
+  background-attachment:fixed;
+  color:var(--n-text);
+}
+
+/* =====================================================================
+   1. UST BAR + MARKA
+   ===================================================================== */
+header{
+  background:rgba(255,255,255,.86); backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--n-border);
+  box-shadow:0 1px 0 rgba(15,23,42,.03);
+}
+.hin{ align-items:center; padding:10px 18px 0 }
+
+/* marka blogu — betikle .hin icine eklenir */
+.n-brand{ display:flex; align-items:center; gap:11px; flex:0 0 auto }
+.n-brand .yazi{ line-height:1.05 }
+.n-brand .ad{
+  font-family:"Barlow Condensed",var(--sans);
+  font-weight:900; font-size:17px; letter-spacing:1.6px;
+  text-transform:uppercase; color:var(--n-text); white-space:nowrap;
+}
+.n-brand .alt{
+  font-family:var(--sans); font-size:9.5px; letter-spacing:.10em;
+  text-transform:uppercase; color:var(--n-faint); margin-top:2px; white-space:nowrap;
+}
+@keyframes norm-spin{ from{transform:rotate(0)} to{transform:rotate(360deg)} }
+.norm-logo{ flex:0 0 auto; display:inline-block; line-height:0;
+  animation:norm-spin 18s linear infinite; will-change:transform }
+@media (prefers-reduced-motion:reduce){ .norm-logo{animation:none} }
+
+.brand h1{
+  font-family:"Barlow Condensed",var(--sans);
+  font-size:19px; font-weight:900; letter-spacing:1.8px; color:var(--n-text);
+}
+.brand p{ color:var(--n-muted) }
+
+/* =====================================================================
+   2. SEKMELER — yukarida, yatay; hap gorunumu
+   ===================================================================== */
+.tabs{ gap:4px; padding:8px 18px 0; border-bottom:0 }
+.tabs .tab{
+  font-family:var(--sans); font-size:12.5px; font-weight:600;
+  letter-spacing:.01em; text-transform:none;
+  color:var(--n-muted); background:transparent;
+  border:1px solid transparent; border-bottom:none;
+  border-radius:10px 10px 0 0; padding:9px 15px; top:1px;
+}
+.tabs .tab:hover{ background:var(--n-card-h); color:var(--n-text) }
+.tabs .tab[aria-selected=true]{
+  background:var(--n-card); border-color:var(--n-border);
+  color:var(--n-accent); font-weight:700;
+  box-shadow:inset 0 2px 0 var(--n-accent);
+}
+
+/* =====================================================================
+   3. KARTLAR
+   ===================================================================== */
+.panel,.hcard,.kblk,.turbox,.aktkart,.fbox,.kal,.dcard,.dagyan,.cbox,
+.spbox,.zwrap,.hblk,.adim,.kalips{
+  background:var(--n-card) !important;
+  border:1px solid var(--n-border) !important;
+  border-radius:14px;
+  box-shadow:var(--n-shadow);
+}
+.panel:hover,.hcard:hover,.dcard:hover{
+  border-color:var(--n-border-h) !important; box-shadow:var(--n-shadow-lg) }
+.prog{ background:var(--n-card) !important; border-color:var(--n-border) !important }
+
+/* =====================================================================
+   4. DUGMELER
+   ===================================================================== */
+button{ font-family:var(--sans); border-radius:10px; font-weight:600 }
+button:not(.ghost):not(.tab):not(.sm):not(.mini0):not(.mode){
+  background:linear-gradient(135deg,var(--n-accent),var(--n-accent-d));
+  color:#fff; border:none; font-weight:700; box-shadow:var(--n-shadow);
+}
+button:not(.ghost):not(.tab):not(.sm):not(.mini0):not(.mode):hover{
+  background:linear-gradient(135deg,#3a80da,#26609f);
+}
+button.ghost{
+  background:var(--n-card) !important; color:var(--n-text);
+  border:1px solid var(--n-border) !important;
+}
+button.ghost:hover{
+  background:var(--n-card-h) !important; border-color:var(--n-border-h) !important }
+button:disabled,button:disabled:hover{
+  background:#f2f5fa !important; color:var(--n-faint) !important;
+  border:1px solid var(--n-border) !important; box-shadow:none;
+}
+button.tealb{
+  background:linear-gradient(135deg,var(--n-accent),var(--n-accent-d)) !important;
+  color:#fff }
+/* .sm dugmeler ana kuralin disinda kaliyordu; okunur hale getir */
+button.sm:not(.ghost){
+  background:var(--n-accent) !important; color:#fff !important;
+  border:1px solid var(--n-accent) !important }
+button.sm.ghost{ color:var(--n-muted) !important }
+/* .mini0 = kucuk metin baglantisi ("sifirla"). Kart da degil, dolu dugme de.
+   Once kart listesine, sonra birincil dugme kuraline yakalanip beyaz-uzerine-
+   beyaz olmustu; ikisinden de cikarildi. */
+button.mini0{ background:none !important; border:none !important;
+  color:var(--n-faint) !important; box-shadow:none !important; border-radius:4px }
+button.mini0:hover{ color:var(--n-danger) !important; background:none !important }
+/* .mode = "Kalip kur / Denklemi yaz" ic sekmeleri; alti cizgili sekme kalir. */
+button.mode{ background:none !important; border-radius:0;
+  color:var(--n-muted) !important; box-shadow:none !important }
+button.mode:hover{ color:var(--n-text) !important; background:none !important }
+button.mode[aria-selected=true]{ color:var(--n-accent) !important;
+  border-bottom-color:var(--n-accent) !important }
+
+/* =====================================================================
+   5. FORM ALANLARI
+   ===================================================================== */
+/* DIKKAT: tablo icindeki acilirlar (td.editc select) ORIJINALDE seffaf ve
+   cercevesizdir. Hepsine beyaz zemin + cerceve verilince her hucre kutuya
+   donusuyor, yan yana 23 sutunda "ust uste binmis" gorunum cikiyor ve
+   .w-t'nin 172px alt siniri hucreden genis kalinca isim kirpiliyor.
+   Bu yuzden tablo ici acilirlar HARIC tutuluyor.                         */
+select,input[type=text],input[type=number],input[type=password],textarea{
+  background:#fff !important; color:var(--n-text) !important;
+  border:1px solid var(--n-border) !important; border-radius:8px;
+}
+td.editc select{
+  background:transparent !important; border-color:transparent !important;
+  color:var(--n-text) !important; border-radius:6px;
+}
+td.editc select:hover{ background:#fff !important;
+  border-color:var(--n-border) !important }
+td.editc select:focus{ background:#fff !important;
+  border-color:var(--n-accent) !important }
+select:focus,input:focus,textarea:focus{
+  outline:none; border-color:var(--n-accent) !important;
+  box-shadow:0 0 0 3px rgba(47,111,196,.15);
+}
+input[type=checkbox]{ accent-color:var(--n-accent) }
+.kblk.off input,.kblk.off select{ background:#f4f7fb !important; opacity:.7 }
+
+/* =====================================================================
+   6. TABLOLAR
+   ===================================================================== */
+thead th{
+  background:#f6f9fd !important; color:var(--n-muted) !important;
+  border-bottom:1px solid var(--n-border) !important;
+}
+tbody tr:hover td,.crow:hover td{ background:#f3f8ff !important }
+tr.sub td,.crowd td,table.mini th{ background:#f6f9fd !important }
+table.calc tr.tot td,.stbl tr.tot td{ background:var(--tealbg) !important }
+td,th{ border-color:var(--n-border) !important }
+.stbl td{ border-bottom-color:var(--soft) !important }
+
+/* Sabit ilk sutunlar KALDIRILDI: sticky hucreler kendi zemini ile yandaki
+   temsilci acilirinin uzerine biniyordu. Gerekirse sonra, sutun genislikleri
+   calisma aninda olculerek yapilir — sabit piksel tahminiyle olmaz. */
+
+/* eksik hucre: dolu sari zemin yerine cok soluk + ince sol cizgi */
+/* Eksik hucre: yalniz cok soluk zemin. Inset turuncu cizgi denendi, 225 bos
+   hucrede tablo cizgili bir dokuya donustugu icin kaldirildi. */
+td.editc.gapc{ background:var(--gap) !important }
+
+/* =====================================================================
+   7. CUBUKLAR, ROZETLER, KUCUK PARCALAR
+   ===================================================================== */
+.ptrack,.rtrack,.dagbar,.cbar,.dbar{ background:#e6ecf5 !important }
+.cb,.rfill,.pseg,.bar{
+  background:linear-gradient(90deg,var(--n-accent),var(--n-accent-d)) !important }
+.badge,.chip,.vtag,.zchip{
+  background:#f4f7fc !important; border-color:var(--n-border) !important;
+  color:var(--n-muted) !important; border-radius:6px;
+}
+.badge.yd{ background:var(--tealbg) !important; color:var(--n-accent-d) !important }
+.note,.hnote,.khint{ color:var(--n-muted) }
+.note code,.genbar code{ background:var(--tealbg) !important; color:var(--n-accent-d) }
+.genbar,.modwarn{
+  background:#f6f9fd !important; border:1px solid var(--n-border) !important;
+  border-radius:12px }
+.eyebrow{ color:var(--n-faint) }
+.toast{ background:#15243b; color:#fff; border:1px solid #15243b;
+  border-radius:12px; box-shadow:var(--n-shadow-lg) }
+.filters{ border-bottom-color:var(--n-border) }
+
+/* durum renkleri */
+.badge.akt,.dchip.yeni{ background:#e3f5ee !important; color:#12715a !important }
+.badge.dus{ background:#fdf4dd !important; color:#8a6209 !important }
+.badge.hrk{ background:#fbe6e0 !important; color:#a3371f !important }
+.up,.pos,.dfark.up{ color:#12715a !important }
+.dn,.neg,.dfark.dn{ color:#c0442a !important }
+
+/* =====================================================================
+   8. DAGITIM TAHTASI
+   ===================================================================== */
+.dchip{
+  background:#fff !important; border:1px solid var(--n-border) !important;
+  border-radius:9px; box-shadow:var(--n-shadow);
+}
+.dchip:hover{ background:var(--n-card-h) !important; border-color:var(--n-border-h) !important }
+.dchip.gecici{
+  background:#fdf4dd !important; border-color:#e0b64a !important; border-style:dashed }
+.dchip.gecici .n{ color:#8a6209 }
+.gcet{ background:#d9a441; color:#fff }
+.gckutu{ background:#fdf7e6 !important; border:1px solid #ecd9a4 !important;
+  border-radius:14px }
+.gcbar b{ color:#8a6209 } .gcbar span,.gcsatir .gcn{ color:#a07a3a }
+.dgatan{ background:#fdf7e6 !important; border:1px solid #ecd9a4 !important;
+  border-radius:12px }
+.dgatan:hover{ background:#fbeecd !important }
+.dgatan b{ color:#8a6209 } .dgatan span{ color:#a07a3a }
+.dgbos,.dempty,.dempty2,.cempty{ color:var(--n-faint) }
+.dcard.over{ border-color:var(--n-accent) !important;
+  box-shadow:0 0 0 3px rgba(47,111,196,.18) }
+.gcmodon .dcard{ outline-color:#d9a441 }
+
+/* =====================================================================
+   9. HESAPLAMA MANTIGI
+   ===================================================================== */
+.bf.f1{ background:#fdf4dd !important; color:#8a6209 }
+.bf.f2{ background:#fbe6e0 !important; color:#a3371f }
+.bf.f3{ background:#e3f5ee !important; color:#12715a }
+.bf.f4{ background:#e8eef8 !important; color:#2b4a76 }
+.bf.f5{ background:#efe9f8 !important; color:#5b4a86 }
+.bf.fz{ background:#fff !important; color:var(--n-text);
+  border:1px solid var(--n-border) }
+.bf.fy{ background:#15243b !important; color:#fff }
+.bigformula{ color:var(--n-muted) }
+.hform{ background:#fff !important; border:1px solid var(--n-border) !important;
+  border-radius:12px }
+.hright{ background:#f8fbfe !important; border-left:1px solid var(--n-border) !important }
+
+/* Musteriler — adim adim hesap */
+.adimbas{ background:#f6f9fd !important; color:var(--n-text) }
+.adim.vurgu .adimbas{ background:var(--tealbg) !important }
+.adim.sonuc .adimbas{ background:#d7e6f9 !important }
+.adimno{ background:var(--n-accent) !important; color:#fff !important }
+.adimform,.adimsn{ color:var(--n-faint) }
+.stbl td.num.zero{ color:var(--n-faint) !important }
+.kd .kstat.zero{ color:#93a3b8 !important }
+
+/* =====================================================================
+   10. PASIF / GECICI SATIRLAR
+   ===================================================================== */
+#t tbody tr.pasif{ opacity:.45 }
+#t tbody tr.gcsatir2 td:first-child{ box-shadow:inset 3px 0 0 #d9a441 }
+#t tbody tr.gcsatir2 .name::after{ color:#8a6209; border-color:#e0b64a }
+.mini tr.nokta-pasif,tr.nokta-pasif{ opacity:.45 }
+.pasifet{ color:#a3371f; border-color:#e0a898 }
+
+/* =====================================================================
+   11. KAYDIRMA CUBUKLARI
+   ===================================================================== */
+*{ scrollbar-color:#c3d2e6 transparent }
+::-webkit-scrollbar{ width:10px; height:10px }
+::-webkit-scrollbar-track{ background:transparent }
+::-webkit-scrollbar-thumb{ background:#c3d2e6; border-radius:6px }
+::-webkit-scrollbar-thumb:hover{ background:#a8bdd8 }
+
+/* =====================================================================
+   12. DAR EKRAN
+   ===================================================================== */
+@media (max-width:900px){
+  .n-brand .yazi{ display:none }
+  .hin{ gap:10px }
+}
+
+/* =====================================================================
+   14. KATSAYI KUTULARI — ic bosluk ve okunurluk
+   .kblk orijinalde duz bir bolumdu (padding:2px 0 10px). Kart gorunumu
+   verilince yazilar cerceveye dayandi; yatay bosluk ekliyoruz.
+   Kucuk yazilar 8.5px + en soluk tondaydi: hem buyutuldu hem koyulastirildi.
+   ===================================================================== */
+.kblk{ padding:14px 16px 16px !important }
+.kblk h4{ margin:0 0 10px !important; font-size:13px }
+.kblks{ gap:14px !important }
+
+/* Orijinalde bu iki yazi nowrap + overflow:hidden + ellipsis idi; 8.5px'te
+   "10 cari · %0..." diye kesiliyordu. Kesmek yerine alt satira aliyoruz —
+   bilgi kaybi olmasin. */
+.kd>span{ font-size:10px !important; color:var(--n-muted) !important;
+  letter-spacing:.02em;
+  white-space:normal !important; overflow:visible !important;
+  text-overflow:clip !important; line-height:1.25 }
+.kd .kstat{ font-size:10px !important; color:var(--n-muted) !important;
+  margin-top:3px !important;
+  white-space:normal !important; overflow:visible !important;
+  text-overflow:clip !important; line-height:1.3 }
+.kd .kstat.big{ color:var(--n-accent) !important; font-weight:700 !important }
+.kd input{ font-size:12.5px !important; padding:6px 4px !important }
+
+/* Aciklama ve etiket yazilari da bir tik koyu */
+.eyebrow{ color:var(--n-muted) !important }
+.khint{ color:var(--n-muted) !important; font-size:11px !important }
+.note,.hnote{ color:var(--n-muted) !important }
+
+/* Diger kart benzeri kutularda da ic bosluk garanti */
+.turbox,.aktkart,.hblk{ padding:14px 16px }
+
+</style>
 
 <header>
   <div class="hin">
+    <div class="n-brand">
+      <span class="norm-logo" style="width:38px;height:38px">
+        <svg width="38" height="38" viewBox="0 0 120 120" fill="none"
+             xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Norm Fasteners">
+          <defs>
+            <linearGradient id="nlg-gri" x1="18" y1="8" x2="58" y2="116"
+                            gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="#d7dadf"/><stop offset="1" stop-color="#31343a"/>
+            </linearGradient>
+            <linearGradient id="nlg-mavi" x1="82" y1="10" x2="82" y2="116"
+                            gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="#21407c"/><stop offset="1" stop-color="#4370b4"/>
+            </linearGradient>
+            <clipPath id="nlg-sag"><polygon points="55,0 120,0 120,120 67,120"/></clipPath>
+          </defs>
+          <path fill-rule="evenodd" clip-rule="evenodd" fill="url(#nlg-gri)" d="M60 4 A56 56 0 1 0 60 116 A56 56 0 1 0 60 4 Z M43 30.6 L77 30.6 L94 60 L77 89.4 L43 89.4 L26 60 Z"/>
+          <g clip-path="url(#nlg-sag)">
+            <path fill-rule="evenodd" clip-rule="evenodd" fill="url(#nlg-mavi)" d="M60 4 A56 56 0 1 0 60 116 A56 56 0 1 0 60 4 Z M43 30.6 L77 30.6 L94 60 L77 89.4 L43 89.4 L26 60 Z"/>
+          </g>
+        </svg>
+      </span>
+      <div class="yazi">
+        <div class="ad">Norm Fasteners</div>
+        <div class="alt">Portföy Puanlama</div>
+      </div>
+    </div>
     <div class="brand"><h1>Ana Veri</h1><p>portföy dengeleme · veri tamamlama ve yük hesabı</p></div>
     <div class="acts">
       <span class="saveind" id="saveind"></span>

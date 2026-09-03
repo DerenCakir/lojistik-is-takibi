@@ -264,7 +264,7 @@ input[type=range]{width:100%;accent-color:var(--teal);height:16px}
 .dagad i.u3{color:#1D467E} .dagad i.u2{color:#0F6E6E} .dagad i.u1{color:var(--ink3)} .dagad i.u0{color:#B9A24A}
 .dagbar{height:6px;background:#E4E3DA;border-radius:2px;overflow:hidden}
 .dagbar b{display:block;height:100%}
-.dagpu{font-family:var(--mono);font-size:10px;font-weight:600;text-align:right}.dfark{display:block;font-size:9.5px;font-weight:700;margin-top:1px}.mini tr.nokta-pasif{opacity:.42}tr.nokta-pasif{opacity:.45}.pasifet{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--rust);border:1px solid var(--rust);border-radius:3px;padding:0 3px;margin-left:4px}.mini tr.nokta-pasif td:nth-child(3){text-decoration:line-through}.nokta-sw{display:flex;align-items:center;gap:5px;cursor:pointer;font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em}.nokta-sw input{margin:0}#t tbody tr.pasif{opacity:.45}#t tbody tr.pasif .name{text-decoration:line-through}.dgatan{margin-bottom:12px;padding:11px 15px;border-radius:10px;cursor:pointer;background:#fdf1e3;border:1px solid #e8c89a;display:flex;gap:12px;align-items:baseline}.dgatan:hover{background:#fbe6cd}.dgatan b{color:#8a5a10;font-size:13px}.dgatan span{color:#a07a3a;font-size:11.5px}.dmeta2 .d.neg{color:#c0392b}.dmeta2 .d.pos{color:#1a7f37}.dfark.up{color:#1a7f37}.dfark.dn{color:#c0392b}
+.dagpu{font-family:var(--mono);font-size:10px;font-weight:600;text-align:right}.dfark{display:block;font-size:9.5px;font-weight:700;margin-top:1px}.mini tr.nokta-pasif{opacity:.42}tr.nokta-pasif{opacity:.45}.pasifet{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--rust);border:1px solid var(--rust);border-radius:3px;padding:0 3px;margin-left:4px}.mini tr.nokta-pasif td:nth-child(3){text-decoration:line-through}.nokta-sw{display:flex;align-items:center;gap:5px;cursor:pointer;font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em}.nokta-sw input{margin:0}#t tbody tr.pasif{opacity:.45}#t tbody tr.pasif .name{text-decoration:line-through}#t tbody tr.gcsatir2 td:first-child{box-shadow:inset 3px 0 0 #e0a341}#t tbody tr.gcsatir2 .name::after{content:'geçici';margin-left:6px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#8a5a10;border:1px solid #e0a341;border-radius:3px;padding:0 3px;vertical-align:middle}.dchip.gecici{background:#fff5e6;border-color:#e0a341;border-style:dashed}.dchip.gecici .n{color:#8a5a10}.gcet{display:inline-block;width:13px;height:13px;line-height:13px;margin-right:4px;border-radius:3px;background:#e0a341;color:#fff;font-size:9px;font-weight:700;text-align:center;font-style:normal}.gcmodon .dcard{outline:2px dashed #e0a341;outline-offset:2px}.gcsw{display:flex;align-items:center;gap:5px;cursor:pointer;font-size:11px}.gcsw input{margin:0}.gckutu{margin:10px 0;padding:10px 14px;border-radius:10px;background:#fff5e6;border:1px solid #e8c89a}.gcbar{display:flex;gap:12px;align-items:baseline;margin-bottom:6px}.gcbar b{color:#8a5a10;font-size:13px}.gcbar span{color:#a07a3a;font-size:11.5px}.gcsatir{display:flex;gap:8px;align-items:center;margin-top:5px;flex-wrap:wrap}.gcsatir .gcad{font-weight:600;font-size:12px;min-width:150px}.gcsatir .gcn{font-size:11.5px;color:#a07a3a;min-width:80px}.gcsatir select{font-family:inherit;font-size:11.5px;padding:3px 6px;border:1px solid #D1D3D4;border-radius:6px}.dgatan{margin-bottom:12px;padding:11px 15px;border-radius:10px;cursor:pointer;background:#fdf1e3;border:1px solid #e8c89a;display:flex;gap:12px;align-items:baseline}.dgatan:hover{background:#fbe6cd}.dgatan b{color:#8a5a10;font-size:13px}.dgatan span{color:#a07a3a;font-size:11.5px}.dmeta2 .d.neg{color:#c0392b}.dmeta2 .d.pos{color:#1a7f37}.dfark.up{color:#1a7f37}.dfark.dn{color:#c0392b}
 .turbox{border:1px solid var(--line);border-radius:3px;background:var(--panel);margin:0 15px 12px;padding:9px 12px}
 .turbas{display:flex;align-items:center;justify-content:space-between;font-family:var(--mono);
   font-size:9px;letter-spacing:.09em;color:var(--ink3);margin-bottom:7px}
@@ -680,10 +680,12 @@ table.calc tr.tot td{border-top:1px solid var(--line);border-bottom:none;backgro
         <option value="pa">Puan · azdan çoğa</option>
         <option value="u">Unvan · yüksekten düşüğe</option>
         <option value="ad">Ada göre</option></select></label>
+      <label class="f gcmod"><span>Geçici devir</span><label class="gcsw"><input type="checkbox" id="dg-gcmod"><span>sürüklediklerim geçici işaretlensin</span></label></label>
       <span class="eyebrow" style="margin-left:auto">Yan listelerden temsilci seç · müşteri kartlarını portföyler arasında, portföy kartlarını başlığından tutup sırasını değiştirmek için sürükle</span>
     </div>
     <div class="note">Müşteri kartlarını temsilciler arasında sürükleyip bırak. Puanlar ve sapmalar anında yeniden hesaplanır.
       Kalıcı olması için <b>Kaydet</b>'e bas; vazgeçersen <b>Mevcut dağılıma dön</b>.</div>
+    <div id="dg-gecici" class="gckutu" style="display:none"></div>
     <div class="stat" id="dg-stat"></div>
   </div>
   <div class="daglyt">
@@ -820,6 +822,9 @@ function veriDonustur(D){
       on:r.onem||'',mz:r.zorluk||'',st:r.siparis_tipi||'',ko:r.kim_oduyor||'',
       ek:r.ekipman||'',pt:r.portal||'',et:r.etiket||'',an:r.asn||'',
       ak:r.aktif===false?'Pasif':'Aktif',   /* musteri durumu */
+      /* Gecici devir: ayrilan birinin portfoyu dagitilirken isaretlenir.
+         Puanlamaya girmez; yalniz gorunur isaret + kimden geldigi bilgisi. */
+      gc:r.gecici===true, asil:r.asil_temsilci||'',
       t:atanmis?sh[0].t:'',
       /* --- view'lerden gelen HAZIR degerler; portal bunlari hesaplamaz --- */
       _ag:{nl:+y.nl||0,al:+y.al||0,sv:+y.sv||0,gm:+y.gm||0,mx:+y.mx||0},
@@ -1034,7 +1039,8 @@ async function saveAll(){
        zorunlu/gonullu ek isler, ekip/unvan. Sunucu tek transaction'da yazar. */
     const p={tip:'tam_kayit',
       cari:C.map(c=>({k:c.k,sg:c.sg,on:c.on,mz:c.mz,st:c.st,ko:c.ko,
-        ek:c.ek,pt:c.pt,et:c.et,an:c.an,ak:c.ak,t:c.t,sp:c.sp,zek:c.zek})),
+        ek:c.ek,pt:c.pt,et:c.et,an:c.an,ak:c.ak,t:c.t,sp:c.sp,zek:c.zek,
+        gc:!!c.gc,asil:c.asil||''})),   /* gecici devir */
       ekip:EKIP,unvan:UNVAN,zekl:ZEKL,gont:GONT,gon:GON,
       /* Yalniz PASIF noktalar gonderilir; gerisi aktif sayilir. */
       pasifNokta:L.filter(x=>x.ak===false).map(x=>({k:x.k,t:x.t}))};
@@ -1100,7 +1106,7 @@ function draw(){
   const r=rowsF(),mx=Math.max(...C.map(c=>ag(c).sv),1);
   document.querySelector('#t tbody').innerHTML=r.map(c=>{
     const a=ag(c),g=gaps(c),d=durum(c),cl=d==='Hareketsiz'?'hrk':(d==='Düşük hareketli'?'dus':'akt');
-    const main=`<tr class="${c.ak==='Pasif'?'pasif':''}"><td><span class="exp" data-x="${c.k}">${open.has(c.k)?'−':'+'}</span></td>
+    const main=`<tr class="${c.ak==='Pasif'?'pasif':''} ${c.gc?'gcsatir2':''}" title="${c.gc?'Geçici devir'+(c.asil?' · asıl sahibi: '+esc(c.asil):''):''}"><td><span class="exp" data-x="${c.k}">${open.has(c.k)?'−':'+'}</span></td>
       <td class="k">${esc(c.k)}</td><td class="name">${esc(c.m)}</td>
       <td class="editc${(!c.t&&!(c.sp&&c.sp.length))?' gapc':''}">${temHucre(c)}</td>
       <td><span class="badge ${c.dk===20?'yd':''}">${c.dk}</span></td>
@@ -1273,6 +1279,58 @@ const nitKat=c=>c._nit||0;
 const FXOK=true;
 let BASE=null,CBASE=null;
 function calcHref(){}
+/* ---------- GECICI DEVIR ----------
+   Biri ayrilirken portfoyu gecici olarak dagitilir; yerine biri gelince geri
+   toplanir. Isaret cari uzerinde durur (c.gc + c.asil = kimden geldigi),
+   puanlamaya HIC girmez. Kaydet'e basilana kadar veritabanina yazilmaz.     */
+
+let GECICIMOD=false;
+
+const geciciler=()=>C.filter(c=>c.gc&&c.ak!=='Pasif');
+const geciciAsillar=()=>[...new Set(geciciler().map(c=>c.asil).filter(Boolean))].sort();
+
+/* Bir cariyi gecici isaretle. Zaten geciciyse ILK asil sahibi korunur:
+   ikinci kez el degistirse bile "aslinda kimin" bilgisi bozulmaz. */
+function geciciYap(c,kaynak){
+  if(!c.gc){c.gc=true;c.asil=kaynak||c.asil||''}
+}
+function geciciBirak(c){ c.gc=false;c.asil='' }
+
+/* Bir asil sahibin gecici dagitilan carilerini toplayip tek temsilciye ver. */
+function geriTopla(asil,hedef){
+  const list=geciciler().filter(c=>c.asil===asil);
+  if(!list.length)return 0;
+  list.forEach(c=>{c.t=(hedef==='(atanmamış)')?'':hedef;delete c.sp;geciciBirak(c)});
+  touched('veri');senaryoTazele();drawDag();draw();
+  toast(list.length+' müşteri '+(hedef==='(atanmamış)'?'atanmamışa alındı':hedef+' portföyüne toplandı')+
+        ' — kalıcı olması için Kaydet.');
+  return list.length;
+}
+
+/* Dagitim sayfasinin ustundeki gecici seridi. */
+function geciciSerit(){
+  const g=geciciler();
+  const kutu=document.getElementById('dg-gecici');
+  if(!kutu)return;
+  if(!g.length){kutu.innerHTML='';kutu.style.display='none';return}
+  kutu.style.display='';
+  const asillar=geciciAsillar();
+  const sec=`<select class="gt-sec"><option value="">— geri toplanacak temsilci —</option>
+    <option value="(atanmamış)">(atanmamış)</option>
+    ${TEM.map(t=>`<option>${esc(t)}</option>`).join('')}</select>`;
+  kutu.innerHTML=`<div class="gcbar">
+    <b>${g.length} müşteri geçici devirde</b>
+    ${asillar.length?`<span>asıl sahibi: ${asillar.map(esc).join(' · ')}</span>`:
+                     `<span>asıl sahibi belirtilmemiş</span>`}
+    </div>
+    ${asillar.map(a=>{
+      const n=g.filter(c=>c.asil===a).length;
+      return `<div class="gcsatir"><span class="gcad">${esc(a)}</span>
+        <span class="gcn">${n} müşteri</span>${sec.replace('class="gt-sec"','class="gt-sec" data-gta="'+esc(a)+'"')}
+        <button class="ghost sm" data-gtal="${esc(a)}">Geri topla</button>
+        <button class="ghost sm" data-gtiptal="${esc(a)}">İşareti kaldır</button></div>`}).join('')}`;
+}
+
 function scope(){return C}
 /* Pasif musteri puanlamaya girmiyor; dagitim tahtasinda da yer almaz. */
 const AKTIFC=()=>C.filter(c=>c.ak!=='Pasif');
@@ -2136,9 +2194,9 @@ function dgKart(g,mx,fdk){
         ${mine.filter(x=>tasindi(x.c)).length?`<span class="tsay">${mine.filter(x=>tasindi(x.c)).length} yeni</span>`:''}</div></div>
     <div class="dlist">${mine.length?mine.map(({c,v})=>{
       const ts=tasindi(c), nereden=ILK[String(c.k)]||'atanmamış';
-      return `<div class="dchip ${c.dk===20?'yd':''} ${c.on===4?'o4':''} ${ts?'yeni':''}" draggable="true" data-dc="${esc(c.k)}"
-        title="${esc(c.m)}${ts?' · geldiği yer: '+esc(nereden):''}">
-        <span class="n">${ts?'<i class="tsok">→</i>':''}${esc(c.m)}</span><span class="v">${nf(v)}</span></div>`}).join('')
+      return `<div class="dchip ${c.dk===20?'yd':''} ${c.on===4?'o4':''} ${ts?'yeni':''} ${c.gc?'gecici':''}" draggable="true" data-dc="${esc(c.k)}"
+        title="${esc(c.m)}${ts?' · geldiği yer: '+esc(nereden):''}${c.gc?' · GEÇİCİ DEVİR'+(c.asil?' · asıl sahibi: '+esc(c.asil):''):''}">
+        <span class="n">${ts?'<i class="tsok">→</i>':''}${c.gc?'<i class="gcet">G</i>':''}${esc(c.m)}</span><span class="v">${nf(v)}</span></div>`}).join('')
       :'<div class="dempty2">Buraya kart bırak</div>'}</div></div>`;
 }
 function dagSiralama(hedef,ek,baslik,renk,L,mx,sir){
@@ -2200,6 +2258,7 @@ function drawDag(){
     : `<div class="dgbos">Soldaki ve sağdaki listelerden temsilci seç.<br>
         <span>Seçtiklerin burada yan yana açılır; müşteri kartlarını aralarında sürükleyip bırakabilirsin.</span></div>`);
 
+  geciciSerit();
   document.getElementById('dg-stat').innerHTML=
     `<span>toplam puan <b>${nf(tot)}</b></span><span>ortalama <b>${nf(tot/(L.length||1))}</b></span>
      <span>yurtdışı <b>${nf(L.filter(g=>ekipOf(g.rep)==='YD').reduce((a,g)=>a+g.val,0))}</b></span>
@@ -2236,7 +2295,9 @@ function wireDag(){
       const k=veri.startsWith('cari:')?veri.slice(5):veri;
       const c=C.find(x=>String(x.k)===k);
       if(!c)return;
+      const kaynakTem=(shares(c)[0]||{}).t||'';
       c.t=(t==='(atanmamış)')?'':t;delete c.sp;   /* tasima = tam devir */
+      if(GECICIMOD)geciciYap(c,kaynakTem==='(atanmamış)'?'':kaynakTem);
       touched('veri');senaryoTazele();
       draw();syncAll();drawDag()})})}
 function dagOto(){
@@ -2801,6 +2862,31 @@ document.querySelectorAll('#t th[data-s]').forEach(th=>th.onclick=()=>{const k=t
 document.getElementById('btn-snap').onclick=snapshot;
 document.getElementById('r-dk').addEventListener('change',drawRank);
 document.getElementById('dg-oto').onclick=dagOto;
+/* ---- gecici devir kontrolleri ---- */
+document.getElementById('dg-gcmod').onchange=e=>{
+  GECICIMOD=e.target.checked;
+  document.getElementById('v-dag').classList.toggle('gcmodon',GECICIMOD);
+  toast(GECICIMOD?'Geçici devir açık — bundan sonra sürüklediklerin geçici işaretlenecek.'
+                 :'Geçici devir kapandı.');
+};
+document.getElementById('dg-gecici').addEventListener('click',e=>{
+  const al=e.target.closest('[data-gtal]');
+  if(al){
+    const asil=al.dataset.gtal;
+    const sec=document.querySelector(`.gt-sec[data-gta="${CSS.escape(asil)}"]`);
+    const hedef=sec?sec.value:'';
+    if(!hedef){toast('Önce geri toplanacak temsilciyi seç.');return}
+    geriTopla(asil,hedef);return}
+  const ip=e.target.closest('[data-gtiptal]');
+  if(ip){
+    const asil=ip.dataset.gtiptal;
+    const n=geciciler().filter(c=>c.asil===asil).length;
+    if(!confirm(asil+' adına yapılan '+n+' geçici işaret kaldırılacak.\n'+
+                'Müşteriler şu anki temsilcilerinde KALIR, yalnız "geçici" damgası silinir.\n\nDevam?'))return;
+    geciciler().filter(c=>c.asil===asil).forEach(geciciBirak);
+    touched('veri');drawDag();draw();
+    toast(n+' müşterinin geçici işareti kaldırıldı — kalıcı olması için Kaydet.');return}
+});
 ['dg-dk','dg-sir'].forEach(id=>document.getElementById(id).addEventListener('change',drawDag));
 document.getElementById('dg-geri').onclick=()=>{const o=JSON.parse(C0);
   C.forEach(c=>{const x=o.find(y=>y.k===c.k);if(x)c.t=x.t});touched('veri');

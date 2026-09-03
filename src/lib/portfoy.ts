@@ -238,7 +238,8 @@ export async function anlikVeri() {
     q(`select * from portfoy.v_temsilci_puan order by puan desc`),
     q(`select id, ad, ekip, unvan, aktif from portfoy.temsilci order by ad`),
     q(`select kod, ad, kanal, segment, onem, zorluk, siparis_tipi,
-              kim_oduyor, ekipman, portal, etiket, asn, aktif
+              kim_oduyor, ekipman, portal, etiket, asn, aktif,
+              gecici, asil_temsilci
          from portfoy.cari order by kod`),
     q(`select cari_kod, kod, ad, kanal, sevkiyat, malzeme_kodu, aktif
          from portfoy.teslim_noktasi`),

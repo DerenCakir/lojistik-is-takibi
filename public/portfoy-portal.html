@@ -975,8 +975,17 @@ OPT.ak=['Aktif','Pasif'];   /* musteri durumu */
 const WC={ak:'w-vy',t:'w-t',sg:'w-sg',on:'w-n',mz:'w-n',st:'w-st',ko:'w-ko',ek:'w-vy',pt:'w-pt',et:'w-vy',an:'w-vy'};
 
 const AGG={},LOK={};
-L.forEach(r=>{const a=AGG[r.k]||(AGG[r.k]={nl:0,al:0,sv:0,gm:0,mx:0});a.nl++;a.sv+=r.s;a.gm+=r.g;
-  if(r.s>0)a.al++; if(r.s>a.mx)a.mx=r.s; (LOK[r.k]||(LOK[r.k]=[])).push(r)});
+/* Kaydetten sonra yenidenYukle() L'yi YENI nesnelerle degistiriyor.
+   LOK bir kez kurulup birakilirsa eski nesnelere isaret etmeye devam eder;
+   teslim noktasi kutucugu eski nesneyi isaretler, saveAll yeni L'ye bakar
+   ve isaretleme sessizce kaybolur. Bu yuzden her yuklemede yeniden kurulur. */
+function buildLOK(){
+  for(const k in AGG) delete AGG[k];
+  for(const k in LOK) delete LOK[k];
+  L.forEach(r=>{const a=AGG[r.k]||(AGG[r.k]={nl:0,al:0,sv:0,gm:0,mx:0});a.nl++;a.sv+=r.s;a.gm+=r.g;
+    if(r.s>0)a.al++; if(r.s>a.mx)a.mx=r.s; (LOK[r.k]||(LOK[r.k]=[])).push(r)});
+}
+buildLOK();
 const AG0={nl:0,al:0,sv:0,gm:0,mx:0};
 const ag=c=>c._ag||AG0;        /* v_cari_yuk */
 const gaps=c=>c._bos||0;       /* v_alan_denetim */
@@ -1319,7 +1328,8 @@ async function yenidenYukle(){
   const V=await window.__YENIDEN();
   C=V.C;L=V.L;KAT=V.KAT;AG=V.AG;EKIP=V.EKIP;UNVAN=V.UNVAN;
   GON=V.GON;ZEKL=V.ZEKL;GONT=V.GONT;PUAN=V.PUAN;
-  buildW();buildAG();buildEk();draw();syncAll();
+  TEM.length=0;TEM.push(...(V.TEM||[]));
+  buildLOK();buildW();buildAG();buildEk();draw();syncAll();
 }
 
 function delta(g,i){

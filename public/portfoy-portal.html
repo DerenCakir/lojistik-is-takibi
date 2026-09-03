@@ -1274,6 +1274,8 @@ const FXOK=true;
 let BASE=null,CBASE=null;
 function calcHref(){}
 function scope(){return C}
+/* Pasif musteri puanlamaya girmiyor; dagitim tahtasinda da yer almaz. */
+const AKTIFC=()=>C.filter(c=>c.ak!=='Pasif');
 /* SCORE artik hesaplamaz, v_cari_yuk.zorluk_carpani'ni dondurur. */
 const SCORE=c=>zorluk(c);
 /* Yalniz HACIM KIRILIMI KARTINI cizmek icin; yetkili hacim view'den gelir. */
@@ -2121,7 +2123,7 @@ function hesDetay(c){
 }
 /* ---------- dağıtım tahtası ---------- */
 function dgKart(g,mx,fdk){
-  const mine=C.filter(c=>shares(c).some(sh=>sh.t===g.rep))
+  const mine=AKTIFC().filter(c=>shares(c).some(sh=>sh.t===g.rep))
     .filter(c=>!fdk||c.dk==+fdk)
     .map(c=>({c,v:yuk(c)})).sort((a,b)=>b.v-a.v);
   const u=unvanOf(g.rep);
@@ -2171,7 +2173,8 @@ function drawDag(){
   if(!FXOK){box.innerHTML='<div class="note">Parametreler sayfasında geçerli bir denklem kurulunca tahta çalışır.</div>';return}
   const fdk=document.getElementById('dg-dk').value;
   const sir=document.getElementById('dg-sir').value;
-  let L=repAggregate(C).sort((a,b)=>b.val-a.val);
+  const CA=AKTIFC();
+  let L=repAggregate(CA).sort((a,b)=>b.val-a.val);
   const mx=Math.max(...L.map(g=>g.val),1)*1.05;
   const tot=L.reduce((a,g)=>a+g.val,0);
 
@@ -2179,7 +2182,7 @@ function drawDag(){
   dagSiralama('dag-yi','YI','YURTİÇİ EKİBİ','#0F6E6E',L.slice(),mx,sir);
 
   const sec=DGSEC.map(r=>L.find(g=>g.rep===r)).filter(Boolean);
-  const degisen=C.filter(tasindi).length;
+  const degisen=CA.filter(tasindi).length;
 
   /* Atanmamis cariler hicbir ekibe ait olmadigi icin yan listelerde gorunmez
      (yan listeler ekibe gore suzuluyor). Buradan acilip dagitilirlar. */

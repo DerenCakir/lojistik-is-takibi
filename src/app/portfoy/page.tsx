@@ -48,6 +48,11 @@ export default async function PortfoyPortalPage() {
             <Icon name="plus" size={14} /> Veri yükle
           </Link>
         )}
+        {mudur && (
+          <Link href="/portfoy/yeni-musteri" className="pfp-eylem">
+            <Icon name="plus" size={14} /> Yeni müşteri
+          </Link>
+        )}
         <span className="pfp-user">{user.name}</span>
       </div>
       <iframe

@@ -468,3 +468,18 @@ a.item:hover{border-color:color-mix(in srgb, var(--brand) 42%, var(--line)); box
 .dg-gun h3{margin:0 0 10px;font-size:14px;display:flex;align-items:center;gap:10px}
 .dg-gun h3 .pf-muted{font-weight:400;font-size:12px}
 .dg-tablo .w-saat{width:60px}
+
+/* ---- portföy: yeni müşteri formu (ym-) ---- */
+.ym-form{display:flex; flex-direction:column; gap:14px}
+.ym-form label{display:flex; flex-direction:column; gap:5px; font-size:12.5px; font-weight:600; flex:1; min-width:0}
+.ym-form label b{color:var(--danger,#c0442a); font-weight:700}
+.ym-form input,.ym-form select{width:100%; padding:8px 10px; font:inherit; font-weight:400}
+.ym-form small{font-weight:400; font-size:11.5px; color:var(--muted); line-height:1.45}
+.ym-satir{display:flex; gap:12px}
+.ym-satir.ym-uc label:first-child{flex:2}
+.ym-nokta{border:1px dashed var(--line); border-radius:11px; padding:12px 14px 14px; margin:0}
+.ym-nokta legend{font-size:12px; font-weight:700; padding:0 6px; color:var(--muted)}
+.ym-not{margin:0 0 10px; font-size:12px; color:var(--muted); line-height:1.5}
+.ym-alt{display:flex; align-items:center; gap:14px; flex-wrap:wrap}
+.ym-ipucu{font-size:12px; color:var(--muted)}
+@media (max-width:720px){ .ym-satir{flex-direction:column} }

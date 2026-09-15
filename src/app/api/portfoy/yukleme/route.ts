@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { jsonCevap, portfoyYetki } from "@/lib/portfoy";
+import { jsonCevap, portfoyYetki, temsilciKimligi } from "@/lib/portfoy";
 import { karsilastir, uygula, geriAl, type HamSatir, type Kararlar } from "@/lib/portfoy-yukleme";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +19,7 @@ export const maxDuration = 120;
 export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ hata: "Oturum yok." }, { status: 401 });
+  if (await temsilciKimligi(user)) return NextResponse.json({ hata: "Bu uç temsilci hesabına kapalıdır." }, { status: 403 });
   if (portfoyYetki(user) !== "duzenle_tumu") {
     return NextResponse.json(
       { hata: "Veri yükleme yetkisi yalnız müdürdedir." }, { status: 403 });

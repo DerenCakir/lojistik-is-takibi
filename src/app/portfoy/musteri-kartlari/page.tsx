@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { portfoyYetki, yazabilir } from "@/lib/portfoy";
+import { temsilciKimligi } from "@/lib/portfoy";
 import { kartListesi, temsilciler, turler } from "@/lib/portfoy-kart";
 import { izinler, hatirlatmalar } from "@/lib/portfoy-izin";
 import Icon from "@/components/Icon";
@@ -24,6 +25,7 @@ async function yukle() {
 export default async function MusteriKartlariPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (await temsilciKimligi(user)) redirect("/portfoy/portfoyum");   // temsilci: yalnız kendi sayfası
   const yazar = yazabilir(portfoyYetki(user));
 
   // Tablolar Supabase'de henüz yoksa (16/17 SQL çalışmadıysa) çökmek yerine

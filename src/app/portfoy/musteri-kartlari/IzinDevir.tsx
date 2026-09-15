@@ -244,7 +244,7 @@ function TahtaGorunum({ t, turler, yazar, bekle, baslat, sonuc, mesajVer, iptalE
                     <td><div className="pf-name">{s.ad}</div><div className="pf-sub">{s.kod}{s.pay < 99.99 ? ` · %${Math.round(s.pay)} pay` : ""}</div></td>
                     <td className="num">{nf(s.yuk)}</td>
                     <td className="kucuk">{s.yedekler.length === 0 ? "—" : s.yedekler.map((y, i) => (
-                      <div key={y.id} title={y.yetkinlik ?? ""}>{i + 1}. {y.ad}{y.yetkinlik ? <span className="pf-muted"> · {y.yetkinlik.length > 40 ? y.yetkinlik.slice(0, 38) + "…" : y.yetkinlik}</span> : ""}</div>))}</td>
+                      <div key={y.id} title={y.yetkinlik ?? ""}>{i + 1}. {y.ad}{y.hazirlik !== null && <span className={"r " + (y.hazirlik >= 80 ? "yesil" : "sari")} style={{ marginLeft: 4 }}>%{y.hazirlik}</span>}{y.yetkinlik ? <span className="pf-muted"> · {y.yetkinlik.length > 40 ? y.yetkinlik.slice(0, 38) + "…" : y.yetkinlik}</span> : ""}</div>))}</td>
                     <td>
                       <select value={s.bakan ?? ""} disabled={!yazar || bekle}
                               className={cak ? "hata" : (!s.bakan && !s.yedekler.length ? "uyari" : "")}

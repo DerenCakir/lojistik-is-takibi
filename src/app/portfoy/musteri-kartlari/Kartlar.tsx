@@ -21,7 +21,7 @@ const tarih = (s: string) => {
 };
 const ekipAd = (e: string | null) => e === "YD" ? "Yurtdışı" : e === "YI" ? "Yurtiçi" : "";
 
-type Hizli = "hepsi" | "yedeksiz" | "notsuz" | "dikkat";
+type Hizli = "hepsi" | "yedeksiz" | "notsuz" | "dikkat" | "hazirsiz";
 
 type Sekme = "musteriler" | "izin" | "hatirlatma";
 
@@ -68,6 +68,7 @@ export default function Kartlar({ liste, turler: ilkTurler, temsilciler, yazar, 
       yedeksiz: s.filter((c) => c.yedek === 0 && c.aktif).length,
       notsuz: s.filter((c) => c.not === 0 && c.aktif).length,
       dikkat: s.filter((c) => c.dikkat).length,
+      hazirsiz: s.filter((c) => c.aktif && c.yedek > 0 && c.not > 0 && (c.hazirlik ?? 0) < 80).length,
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liste, rozetler]);
@@ -81,6 +82,7 @@ export default function Kartlar({ liste, turler: ilkTurler, temsilciler, yazar, 
       if (hizli === "yedeksiz" && !(c.yedek === 0 && c.aktif)) return false;
       if (hizli === "notsuz" && !(c.not === 0 && c.aktif)) return false;
       if (hizli === "dikkat" && !c.dikkat) return false;
+      if (hizli === "hazirsiz" && !(c.aktif && c.yedek > 0 && c.not > 0 && (c.hazirlik ?? 0) < 80)) return false;
       return true;
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -109,6 +111,7 @@ export default function Kartlar({ liste, turler: ilkTurler, temsilciler, yazar, 
         yedek: d.yedekler.length,
         not: d.notlar.filter((n) => n.gecerli).length,
         dikkat: d.notlar.some((n) => n.gecerli && n.onemli),
+        hazirlik: d.yedekler.length ? Math.max(...d.yedekler.map((y) => y.hazirlik.yuzde)) : null,
       } }));
     }
   };
@@ -157,7 +160,7 @@ export default function Kartlar({ liste, turler: ilkTurler, temsilciler, yazar, 
           </select>
         </div>
         <div className="mk-hizli">
-          {([["hepsi", "Hepsi"], ["yedeksiz", "Yedeği yok"], ["notsuz", "Notu yok"], ["dikkat", "Dikkat notu var"]] as [Hizli, string][])
+          {([["hepsi", "Hepsi"], ["yedeksiz", "Yedeği yok"], ["notsuz", "Notu yok"], ["dikkat", "Dikkat notu var"], ["hazirsiz", "Yedeği hazır değil"]] as [Hizli, string][])
             .map(([k, ad]) => (
               <button key={k} type="button" className={hizli === k ? "on" : ""} onClick={() => setHizli(k)}>
                 {ad} · {sayilar[k]}
@@ -178,6 +181,7 @@ export default function Kartlar({ liste, turler: ilkTurler, temsilciler, yazar, 
                 {c.dikkat && <span className="r dikkat">!</span>}
                 {c.yedek ? <span className="r var">{c.yedek} yedek</span> : (c.aktif && <span className="r yok">yedek yok</span>)}
                 {c.not > 0 && <span className="r n">{c.not} not</span>}
+                {c.yedek > 0 && c.not > 0 && c.hazirlik !== null && <span className={"r " + (c.hazirlik >= 80 ? "var" : "yok")}>hazır %{c.hazirlik}</span>}
               </div>
             </div>
           ))}
@@ -240,6 +244,16 @@ export default function Kartlar({ liste, turler: ilkTurler, temsilciler, yazar, 
                         <button type="button" className="mk-link sil" disabled={bekle}
                                 onClick={() => { if (confirm(y.ad + " yedeklikten çıkarılsın mı?")) baslat(async () => uygula(await yedekSilAction(detay.kod, y.temsilci_id))); }}>çıkar</button>
                       </span>}
+                    </div>
+                    <div className="pm-hazir-satir">
+                      {y.hazirlik.toplam === 0 ? <span className="kucuk">müşteride not yok — değerlendirecek bir şey yok</span> : <>
+                        <span className="pm-hazir" title={`${y.hazirlik.tam} tam · ${y.hazirlik.aktarim} aktarım · ${y.hazirlik.yok} fikri yok · ${y.hazirlik.bekleyen} değerlendirilmedi`}>
+                          {Array.from({ length: y.hazirlik.tam }, (_, k) => <i key={"t" + k} className="t" />)}
+                          {Array.from({ length: y.hazirlik.aktarim }, (_, k) => <i key={"a" + k} className="a" />)}
+                          {Array.from({ length: y.hazirlik.yok }, (_, k) => <i key={"y" + k} className="y" />)}
+                          {Array.from({ length: y.hazirlik.bekleyen }, (_, k) => <i key={"d" + k} className="d" />)}
+                          <b>%{y.hazirlik.yuzde} hazır</b></span>
+                        <span className="kucuk">{y.hazirlik.tam} tam · {y.hazirlik.aktarim} aktarım gerekli · {y.hazirlik.yok} fikri yok{y.hazirlik.bekleyen ? ` · ${y.hazirlik.bekleyen} değerlendirilmedi` : ""}</span></>}
                     </div>
                     <textarea className="yetkinlik" defaultValue={y.yetkinlik ?? ""} disabled={!yazar || bekle}
                               placeholder="Bu yedek neleri yapabilir? (ör. sevkiyat ve ASN'yi bilir, fatura sürecini bilmez) · odak çıkınca veya Ctrl+Enter ile kaydolur"

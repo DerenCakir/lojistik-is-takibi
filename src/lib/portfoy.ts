@@ -30,6 +30,31 @@ export function yazabilir(y: PortfoyYetki) {
   return y !== "oku";
 }
 
+/**
+ * TEMSİLCİ ROLÜ — en dar yetki.
+ * Kullanıcı adı portfoy.temsilci_kullanici'da bir temsilciye bağlıysa ve
+ * kişi yönetici değilse, temsilci kimliği döner. Bu kimlikle:
+ *   - ana portal, Müşteri Kartları, Dağıtım, Temsilciler, Veri yükle,
+ *     Değişiklik geçmişi ve /api/portfoy/* KAPALIDIR (puan/yük görülemez);
+ *   - yalnız /portfoy/portfoyum açılır (kendi müşterileri, notlar, yedekler).
+ * Yöneticiler (isAdmin / MUDUR / YONETICI) asla temsilci sayılmaz.
+ */
+export async function temsilciKimligi(user: CurrentUser): Promise<number | null> {
+  if (user.isAdmin || user.role === "MUDUR" || user.role === "YONETICI") return null;
+  try {
+    const r = await db.$queryRaw<{ temsilci_id: bigint }[]>`
+      select temsilci_id from portfoy.temsilci_kullanici where kullanici_adi = ${user.username}`;
+    return r.length ? Number(r[0].temsilci_id) : null;
+  } catch {
+    return null;   // tablo henüz yoksa (19 çalışmadıysa) kimse temsilci sayılmaz
+  }
+}
+
+/** Sunucu eylemleri/API için: temsilciyse hata fırlat. */
+export async function temsilciDegil(user: CurrentUser) {
+  if (await temsilciKimligi(user)) throw new Error("Bu alan temsilci hesabına kapalıdır.");
+}
+
 // ---------------------------------------------------------------- tipler
 
 export type TemsilciPuan = {

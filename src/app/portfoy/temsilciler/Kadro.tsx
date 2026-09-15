@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import {
-  aktifEtAction, devretAction, ekleAction, guncelleAction, pasifeAlAction,
+  aktifEtAction, devretAction, ekleAction, guncelleAction, pasifeAlAction, kullaniciBaglaAction,
   type Sonuc,
 } from "./actions";
 
@@ -17,7 +17,7 @@ const UNVAN: Record<number, string> = {
 const nf = (n: number, b = 1) =>
   n.toLocaleString("tr-TR", { minimumFractionDigits: b, maximumFractionDigits: b });
 
-export default function Kadro({ satirlar }: { satirlar: Satir[] }) {
+export default function Kadro({ satirlar, baglar }: { satirlar: Satir[]; baglar: Record<number, string> }) {
   const [mesaj, setMesaj] = useState<string | null>(null);
   const [hata, setHata] = useState<string | null>(null);
   const [duzenlenen, setDuzenlenen] = useState<number | null>(null);
@@ -74,7 +74,7 @@ export default function Kadro({ satirlar }: { satirlar: Satir[] }) {
           <thead>
             <tr>
               <th>Temsilci</th><th>Ekip</th><th>Unvan</th>
-              <th className="num">Cari</th><th className="num">Yük</th><th className="num">Puan</th>
+              <th className="num">Cari</th><th className="num">Yük</th><th className="num">Puan</th><th>Giriş hesabı</th>
               <th />
             </tr>
           </thead>
@@ -111,6 +111,14 @@ export default function Kadro({ satirlar }: { satirlar: Satir[] }) {
                   <td className="num">{nf(t.cari, t.cari % 1 ? 1 : 0)}</td>
                   <td className="num">{nf(t.yuk, 2)}</td>
                   <td className="num pf-strong">{nf(t.puan)}</td>
+                  <td>
+                    <form className="tk-hesap" action={(fd) => isle(kullaniciBaglaAction(fd))}>
+                      <input type="hidden" name="id" value={t.id} />
+                      <input name="kullanici" defaultValue={baglar[t.id] ?? ""} placeholder="kullanıcı adı"
+                             title="İş Takibi kullanıcı adı. Bağlanınca bu kişi girişte yalnız Portföyüm sayfasını görür." />
+                      <button className="btn ghost" disabled={bekle}>{baglar[t.id] ? "Güncelle" : "Bağla"}</button>
+                    </form>
+                  </td>
                   <td className="tk-eylem">
                     <button className="btn ghost" onClick={() => setDuzenlenen(t.id)}>Düzenle</button>
                     {t.cari > 0 ? (

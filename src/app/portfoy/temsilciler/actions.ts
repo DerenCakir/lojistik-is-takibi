@@ -78,3 +78,17 @@ export async function devretAction(kaynakId: number, hedefId: number): Promise<S
     return { ok: false, hata: e instanceof Error ? e.message : "Devredilemedi." };
   }
 }
+
+/* ---- temsilci hesabi baglama (Portfoyum girisi) ---- */
+import { kullaniciBagla } from "@/lib/portfoy-portfoyum";
+export async function kullaniciBaglaAction(fd: FormData): Promise<Sonuc> {
+  try {
+    const u = await yetkiGerek();
+    const ad = String(fd.get("kullanici") ?? "").trim();
+    await kullaniciBagla(Number(fd.get("id")), ad || null, u.username);
+    tazele();
+    return { ok: true, mesaj: ad ? `Hesap bağlandı: ${ad}` : "Hesap bağı kaldırıldı." };
+  } catch (e) {
+    return { ok: false, hata: e instanceof Error ? e.message : "Bağlanamadı." };
+  }
+}

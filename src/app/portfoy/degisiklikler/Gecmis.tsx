@@ -17,6 +17,7 @@ const BASLIK: Record<string, string> = {
   izin: "İzin",
   izin_devir: "İzinde bakan",
   hatirlatma: "Hatırlatma",
+  yedek_degerlendirme: "Yedek değerlendirmesi",
   "(tam kayit)": "Kaydetme",
   "(veri yukleme)": "Excel veri yükleme",
 };

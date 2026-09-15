@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { portfoyYetki, yazabilir } from "@/lib/portfoy";
 import { listele } from "@/lib/portfoy-temsilci";
+import { kullaniciBaglari } from "@/lib/portfoy-portfoyum";
 import Icon from "@/components/Icon";
 import Kadro from "./Kadro";
 
@@ -15,6 +16,7 @@ export default async function TemsilcilerPage() {
   if (!yazabilir(portfoyYetki(user))) redirect("/portfoy");   // müdür + yönetici
 
   const satirlar = await listele();
+  const baglar = await kullaniciBaglari().catch(() => ({} as Record<number, string>));
 
   return (
     <div className="pfp-wrap">
@@ -27,7 +29,7 @@ export default async function TemsilcilerPage() {
         <span className="pfp-user">{user.name}</span>
       </div>
       <div className="tk-govde">
-        <Kadro satirlar={satirlar} />
+        <Kadro satirlar={satirlar} baglar={baglar} />
       </div>
     </div>
   );

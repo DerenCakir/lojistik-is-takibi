@@ -14,13 +14,15 @@ export type KartSatir = {
   kod: string; ad: string; kanal: number | null; aktif: boolean;
   temsilci: string;            // "AD" | "AD %60 · AD %40" | ""
   ekip: string | null;
-  yedek: number;               // 0..2
+  yedek: number;               // yedek sayısı
   not: number;                 // geçerli not sayısı
   dikkat: boolean;             // önemli başlıkta geçerli not var mı
+  hazirlik: number | null;     // en hazır yedeğin yüzdesi (yedek/not yoksa null)
 };
 
 export type Yedek = { sira: number; temsilci_id: number; ad: string; ekip: string | null;
-                      puan: number; cari_sayisi: number; yetkinlik: string | null };
+                      puan: number; cari_sayisi: number; yetkinlik: string | null;
+                      hazirlik: { toplam: number; tam: number; aktarim: number; yok: number; bekleyen: number; yuzde: number } };
 export type Not = { id: number; tur_id: number | null; tur: string; onemli: boolean;
                     metin: string; yazan: string | null; ts: string; gecerli: boolean;
                     izin: string | null };   // devir notuysa "AD · 10.10–24.10"
@@ -45,7 +47,7 @@ export async function kartListesi(): Promise<KartSatir[]> {
   const rows = await db.$queryRaw<{
     kod: string; ad: string; kanal: number | null; aktif: boolean;
     temsilci: string | null; ekip: string | null;
-    yedek: bigint; notsay: bigint; dikkat: boolean;
+    yedek: bigint; notsay: bigint; dikkat: boolean; hazirlik: number | null;
   }[]>`
     with atama as (
       select p.cari_kod,
@@ -61,7 +63,14 @@ export async function kartListesi(): Promise<KartSatir[]> {
            (select count(*) from portfoy.cari_yedek y where y.cari_kod = c.kod)          as yedek,
            (select count(*) from portfoy.cari_not  x where x.cari_kod = c.kod and x.gecerli) as notsay,
            exists (select 1 from portfoy.cari_not x join portfoy.not_turu t on t.id = x.tur_id
-                    where x.cari_kod = c.kod and x.gecerli and t.onemli)                 as dikkat
+                    where x.cari_kod = c.kod and x.gecerli and t.onemli)                 as dikkat,
+           (select max(h.yuzde) from (
+              select case when count(x.id) = 0 then null
+                          else round(100.0 * count(d.durum) filter (where d.durum = 'tam') / count(x.id)) end as yuzde
+              from portfoy.cari_yedek y
+              left join portfoy.cari_not x on x.cari_kod = y.cari_kod and x.gecerli
+              left join portfoy.yedek_degerlendirme d on d.not_id = x.id and d.yedek_temsilci_id = y.temsilci_id
+              where y.cari_kod = c.kod group by y.temsilci_id) h)                          as hazirlik
     from portfoy.cari c
     left join atama a on a.cari_kod = c.kod
     order by c.ad`;
@@ -69,6 +78,7 @@ export async function kartListesi(): Promise<KartSatir[]> {
     kod: r.kod, ad: r.ad, kanal: r.kanal, aktif: r.aktif,
     temsilci: r.temsilci ?? "", ekip: r.ekip,
     yedek: n(r.yedek), not: n(r.notsay), dikkat: !!r.dikkat,
+    hazirlik: r.hazirlik === null ? null : Number(r.hazirlik),
   }));
 }
 
@@ -106,9 +116,17 @@ export async function kartDetay(kod: string): Promise<KartDetay | null> {
 
   const yedekler = await db.$queryRaw<{
     sira: number; temsilci_id: bigint; ad: string; ekip: string | null; puan: number; cari_sayisi: number; yetkinlik: string | null;
+    h_toplam: bigint; h_tam: bigint; h_aktarim: bigint; h_yok: bigint;
   }[]>`
     select y.sira, y.temsilci_id, t.ad, t.ekip,
-           coalesce(tp.puan, 0) as puan, coalesce(tp.cari_sayisi, 0) as cari_sayisi, y.yetkinlik
+           coalesce(tp.puan, 0) as puan, coalesce(tp.cari_sayisi, 0) as cari_sayisi, y.yetkinlik,
+           (select count(*) from portfoy.cari_not x where x.cari_kod = y.cari_kod and x.gecerli) as h_toplam,
+           (select count(*) from portfoy.cari_not x join portfoy.yedek_degerlendirme d on d.not_id = x.id and d.yedek_temsilci_id = y.temsilci_id
+             where x.cari_kod = y.cari_kod and x.gecerli and d.durum = 'tam') as h_tam,
+           (select count(*) from portfoy.cari_not x join portfoy.yedek_degerlendirme d on d.not_id = x.id and d.yedek_temsilci_id = y.temsilci_id
+             where x.cari_kod = y.cari_kod and x.gecerli and d.durum = 'aktarim') as h_aktarim,
+           (select count(*) from portfoy.cari_not x join portfoy.yedek_degerlendirme d on d.not_id = x.id and d.yedek_temsilci_id = y.temsilci_id
+             where x.cari_kod = y.cari_kod and x.gecerli and d.durum = 'yok') as h_yok
     from portfoy.cari_yedek y
     join portfoy.temsilci t on t.id = y.temsilci_id
     left join portfoy.v_temsilci_puan tp on tp.temsilci_id = y.temsilci_id
@@ -144,6 +162,8 @@ export async function kartDetay(kod: string): Promise<KartDetay | null> {
     yedekler: yedekler.map((y) => ({
       sira: y.sira, temsilci_id: Number(y.temsilci_id), ad: y.ad, ekip: y.ekip,
       puan: Number(y.puan), cari_sayisi: Number(y.cari_sayisi), yetkinlik: y.yetkinlik,
+      hazirlik: (() => { const t = n(y.h_toplam), a = n(y.h_tam), b = n(y.h_aktarim), c2 = n(y.h_yok);
+        return { toplam: t, tam: a, aktarim: b, yok: c2, bekleyen: t - a - b - c2, yuzde: t ? Math.round(a / t * 100) : 0 }; })(),
     })),
     notlar: notlar.map((x) => ({
       id: Number(x.id), tur_id: x.tur_id === null ? null : Number(x.tur_id),

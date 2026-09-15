@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { portfoyYetki, sonDegisiklik, yazabilir } from "@/lib/portfoy";
+import { temsilciKimligi } from "@/lib/portfoy";
 import Icon from "@/components/Icon";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +18,7 @@ export const dynamic = "force-dynamic";
 export default async function PortfoyPortalPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (await temsilciKimligi(user)) redirect("/portfoy/portfoyum");   // temsilci: yalnız kendi sayfası
   const yetki = portfoyYetki(user);
   const mudur = yetki === "duzenle_tumu";
   const yazar = yazabilir(yetki);

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
-import { portfoyYetki, yazabilir } from "@/lib/portfoy";
+import { portfoyYetki, yazabilir, temsilciDegil } from "@/lib/portfoy";
 import {
   kartDetay, notEkle, notGecerlilik, yedekEkle, yedekSil, yedekYetkinlik, yedekSira, turEkle, turGuncelle, turler,
   type KartDetay, type Tur,
@@ -15,7 +15,14 @@ export type Sonuc<T = undefined> =
 /** Notları ve yedekleri müdür ve yöneticiler yazar; herkes okur. */
 async function yetkiGerek() {
   const user = await requireUser();
+  await temsilciDegil(user);
   if (!yazabilir(portfoyYetki(user))) throw new Error("Bu işlem için yazma yetkisi gerekiyor.");
+  return user;
+}
+/** Salt okuma eylemleri de temsilciye kapalı (bütün müşterileri döndürürler). */
+async function okumaGerek() {
+  const user = await requireUser();
+  await temsilciDegil(user);
   return user;
 }
 const tazele = () => revalidatePath("/portfoy/musteri-kartlari");
@@ -23,7 +30,7 @@ const hata = (e: unknown, v: string) => ({ ok: false as const, hata: e instanceo
 
 export async function detayAction(kod: string): Promise<Sonuc<KartDetay | null>> {
   try {
-    await requireUser();
+    await okumaGerek();
     return { ok: true, veri: await kartDetay(kod) };
   } catch (e) { return hata(e, "Kart okunamadı."); }
 }
@@ -93,7 +100,7 @@ import {
 } from "@/lib/portfoy-izin";
 
 export async function izinlerAction(): Promise<Sonuc<Izin[]>> {
-  try { await requireUser(); return { ok: true, veri: await izinler() }; }
+  try { await okumaGerek(); return { ok: true, veri: await izinler() }; }
   catch (e) { return hata(e, "İzinler okunamadı."); }
 }
 export async function izinEkleAction(temsilciId: number, baslangic: string, bitis: string,
@@ -108,7 +115,7 @@ export async function izinIptalAction(id: number): Promise<Sonuc<Izin[]>> {
   catch (e) { return hata(e, "İptal edilemedi."); }
 }
 export async function tahtaAction(izinId: number): Promise<Sonuc<Tahta | null>> {
-  try { await requireUser(); return { ok: true, veri: await tahta(izinId) }; }
+  try { await okumaGerek(); return { ok: true, veri: await tahta(izinId) }; }
   catch (e) { return hata(e, "Tahta okunamadı."); }
 }
 export async function devirAction(izinId: number, cariKod: string, bakanId: number | null): Promise<Sonuc<Tahta | null>> {
@@ -143,6 +150,6 @@ export async function hatirlatmaSilAction(id: number): Promise<Sonuc<Hatirlatma[
   catch (e) { return hata(e, "Silinemedi."); }
 }
 export async function hatirlatmalarAction(): Promise<Sonuc<Hatirlatma[]>> {
-  try { await requireUser(); return { ok: true, veri: await hatirlatmalar() }; }
+  try { await okumaGerek(); return { ok: true, veri: await hatirlatmalar() }; }
   catch (e) { return hata(e, "Hatırlatmalar okunamadı."); }
 }

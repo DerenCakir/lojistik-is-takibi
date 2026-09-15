@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { anlikVeri, jsonCevap, portfoyYetki, yazabilir } from "@/lib/portfoy";
+import { anlikVeri, jsonCevap, portfoyYetki, yazabilir, temsilciKimligi } from "@/lib/portfoy";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +16,7 @@ export async function GET() {
   if (!user) {
     return NextResponse.json({ hata: "Oturum yok." }, { status: 401 });
   }
+  if (await temsilciKimligi(user)) return NextResponse.json({ hata: "Bu uç temsilci hesabına kapalıdır." }, { status: 403 });
   try {
     const veri = await anlikVeri();
     return jsonCevap({

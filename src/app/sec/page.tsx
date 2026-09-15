@@ -5,6 +5,7 @@ import { logoutAction } from "@/app/(app)/actions";
 import Logo from "@/components/Logo";
 import Icon from "@/components/Icon";
 import { roleLabel } from "@/lib/constants";
+import { temsilciKimligi } from "@/lib/portfoy";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,7 @@ export const dynamic = "force-dynamic";
 export default async function SecPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  const temsilci = await temsilciKimligi(user);   // temsilci hesabı: portföy yerine "Portföyüm"
 
   return (
     <div className="sec-wrap">
@@ -49,15 +51,27 @@ export default async function SecPage() {
           <span className="sec-go">Gir <Icon name="chevronRight" size={15} /></span>
         </Link>
 
-        <Link href="/portfoy" className="sec-card sec-pf">
-          <div className="sec-ic"><Icon name="chart" size={30} /></div>
-          <h2>Portföy Puanlama Portalı</h2>
-          <p>
-            336 cari, temsilci iş yükü puanları, veri tamamlama ve portföy
-            dağıtım tahtası.
-          </p>
-          <span className="sec-go">Gir <Icon name="chevronRight" size={15} /></span>
-        </Link>
+        {temsilci ? (
+          <Link href="/portfoy/portfoyum" className="sec-card sec-pf">
+            <div className="sec-ic"><Icon name="users" size={30} /></div>
+            <h2>Portföyüm</h2>
+            <p>
+              Müşterilerin, süreç notların, yedeklerin ve sana düşen
+              hatırlatmalar.
+            </p>
+            <span className="sec-go">Gir <Icon name="chevronRight" size={15} /></span>
+          </Link>
+        ) : (
+          <Link href="/portfoy" className="sec-card sec-pf">
+            <div className="sec-ic"><Icon name="chart" size={30} /></div>
+            <h2>Portföy Puanlama Portalı</h2>
+            <p>
+              336 cari, temsilci iş yükü puanları, veri tamamlama ve portföy
+              dağıtım tahtası.
+            </p>
+            <span className="sec-go">Gir <Icon name="chevronRight" size={15} /></span>
+          </Link>
+        )}
       </div>
     </div>
   );

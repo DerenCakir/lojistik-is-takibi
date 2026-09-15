@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { ALANLAR, gecerliAlan, jsonCevap, portfoyYetki, yazabilir } from "@/lib/portfoy";
+import { ALANLAR, gecerliAlan, jsonCevap, portfoyYetki, yazabilir, temsilciKimligi } from "@/lib/portfoy";
 import { tamKayit, type TamKayit } from "@/lib/portfoy-kayit";
 
 export const dynamic = "force-dynamic";
@@ -42,6 +42,7 @@ const PARAMETRELER = ["wsv", "wnl", "wgm", "olcek", "us", "kat"];
 export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ hata: "Oturum yok." }, { status: 401 });
+  if (await temsilciKimligi(user)) return NextResponse.json({ hata: "Bu uç temsilci hesabına kapalıdır." }, { status: 403 });
 
   const yetki = portfoyYetki(user);
   if (!yazabilir(yetki)) {

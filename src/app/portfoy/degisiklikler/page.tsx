@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { degisiklikler } from "@/lib/portfoy";
+import { temsilciKimligi } from "@/lib/portfoy";
 import Icon from "@/components/Icon";
 import Gecmis from "./Gecmis";
 
@@ -11,6 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function DegisikliklerPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (await temsilciKimligi(user)) redirect("/portfoy/portfoyum");   // temsilci: yalnız kendi sayfası
   const kayitlar = await degisiklikler(2000);
 
   return (

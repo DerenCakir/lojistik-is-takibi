@@ -22,7 +22,7 @@ export type Izin = {
 
 export type TahtaSatir = {
   kod: string; ad: string; yuk: number; pay: number;
-  yedekler: { id: number; ad: string; yetkinlik: string | null }[];   // sıralı, sınırsız
+  yedekler: { id: number; ad: string; yetkinlik: string | null; hazirlik: number | null }[];   // sıralı, sınırsız; hazırlık = %tam
   bakan: number | null;
   aktarildi: boolean; aktaranNot: { yazan: string | null; ts: string; adet: number } | null;
   hatirlatmalar: { id: number; tarih: string; metin: string; yapildi: boolean }[];
@@ -127,7 +127,12 @@ export async function tahta(izinId: number): Promise<Tahta | null> {
     bakan: bigint | null; notAdet: bigint; notYazan: string | null; notTs: Date | null;
   }[]>`
     select c.kod, c.ad, y.yuk, p.pay,
-           (select json_agg(json_build_object('id', yy.temsilci_id, 'ad', ty.ad, 'yetkinlik', yy.yetkinlik) order by yy.sira, ty.ad)::text
+           (select json_agg(json_build_object('id', yy.temsilci_id, 'ad', ty.ad, 'yetkinlik', yy.yetkinlik,
+                     'hazirlik', (select case when count(x.id) = 0 then null
+                                              else round(100.0 * count(d.durum) filter (where d.durum = 'tam') / count(x.id)) end
+                                  from portfoy.cari_not x
+                                  left join portfoy.yedek_degerlendirme d on d.not_id = x.id and d.yedek_temsilci_id = yy.temsilci_id
+                                  where x.cari_kod = yy.cari_kod and x.gecerli)) order by yy.sira, ty.ad)::text
               from portfoy.cari_yedek yy join portfoy.temsilci ty on ty.id = yy.temsilci_id
              where yy.cari_kod = c.kod) as yedekler,
            dv.bakan_temsilci_id as bakan,
@@ -152,8 +157,8 @@ export async function tahta(izinId: number): Promise<Tahta | null> {
 
   const S: TahtaSatir[] = satirlar.map((r) => ({
     kod: r.kod, ad: r.ad, yuk: Number(r.yuk) * Number(r.pay) / 100, pay: Number(r.pay),
-    yedekler: (JSON.parse(r.yedekler ?? "[]") as { id: number | string; ad: string; yetkinlik: string | null }[])
-      .map((y) => ({ id: Number(y.id), ad: y.ad, yetkinlik: y.yetkinlik })),
+    yedekler: (JSON.parse(r.yedekler ?? "[]") as { id: number | string; ad: string; yetkinlik: string | null; hazirlik: number | string | null }[])
+      .map((y) => ({ id: Number(y.id), ad: y.ad, yetkinlik: y.yetkinlik, hazirlik: y.hazirlik === null ? null : Number(y.hazirlik) })),
     bakan: r.bakan === null ? null : Number(r.bakan),
     aktarildi: n(r.notAdet) > 0,
     aktaranNot: n(r.notAdet) ? { yazan: r.notYazan, ts: r.notTs ? r.notTs.toISOString() : "", adet: n(r.notAdet) } : null,

@@ -22,7 +22,7 @@ export type Izin = {
 
 export type TahtaSatir = {
   kod: string; ad: string; yuk: number; pay: number;
-  yedek1: { id: number; ad: string } | null; yedek2: { id: number; ad: string } | null;
+  yedekler: { id: number; ad: string; yetkinlik: string | null }[];   // sıralı, sınırsız
   bakan: number | null;
   aktarildi: boolean; aktaranNot: { yazan: string | null; ts: string; adet: number } | null;
   hatirlatmalar: { id: number; tarih: string; metin: string; yapildi: boolean }[];
@@ -123,11 +123,13 @@ export async function tahta(izinId: number): Promise<Tahta | null> {
 
   const satirlar = await db.$queryRaw<{
     kod: string; ad: string; yuk: number; pay: number;
-    y1id: bigint | null; y1ad: string | null; y2id: bigint | null; y2ad: string | null;
+    yedekler: string | null;
     bakan: bigint | null; notAdet: bigint; notYazan: string | null; notTs: Date | null;
   }[]>`
     select c.kod, c.ad, y.yuk, p.pay,
-           y1.temsilci_id as y1id, t1.ad as y1ad, y2.temsilci_id as y2id, t2.ad as y2ad,
+           (select json_agg(json_build_object('id', yy.temsilci_id, 'ad', ty.ad, 'yetkinlik', yy.yetkinlik) order by yy.sira, ty.ad)::text
+              from portfoy.cari_yedek yy join portfoy.temsilci ty on ty.id = yy.temsilci_id
+             where yy.cari_kod = c.kod) as yedekler,
            dv.bakan_temsilci_id as bakan,
            (select count(*) from portfoy.cari_not x where x.cari_kod = c.kod and x.izin_id = ${izinId} and x.gecerli) as "notAdet",
            (select x.yazan from portfoy.cari_not x where x.cari_kod = c.kod and x.izin_id = ${izinId} and x.gecerli order by x.ts desc limit 1) as "notYazan",
@@ -135,10 +137,6 @@ export async function tahta(izinId: number): Promise<Tahta | null> {
     from portfoy.portfoy p
     join portfoy.cari c on c.kod = p.cari_kod
     join portfoy.v_cari_yuk y on y.cari_kod = c.kod
-    left join portfoy.cari_yedek y1 on y1.cari_kod = c.kod and y1.sira = 1
-    left join portfoy.temsilci t1 on t1.id = y1.temsilci_id
-    left join portfoy.cari_yedek y2 on y2.cari_kod = c.kod and y2.sira = 2
-    left join portfoy.temsilci t2 on t2.id = y2.temsilci_id
     left join portfoy.izin_devir dv on dv.izin_id = ${izinId} and dv.cari_kod = c.kod
     where p.temsilci_id = ${izin.temsilci_id} and c.aktif
     order by y.yuk desc`;
@@ -154,8 +152,8 @@ export async function tahta(izinId: number): Promise<Tahta | null> {
 
   const S: TahtaSatir[] = satirlar.map((r) => ({
     kod: r.kod, ad: r.ad, yuk: Number(r.yuk) * Number(r.pay) / 100, pay: Number(r.pay),
-    yedek1: r.y1id ? { id: Number(r.y1id), ad: r.y1ad! } : null,
-    yedek2: r.y2id ? { id: Number(r.y2id), ad: r.y2ad! } : null,
+    yedekler: (JSON.parse(r.yedekler ?? "[]") as { id: number | string; ad: string; yetkinlik: string | null }[])
+      .map((y) => ({ id: Number(y.id), ad: y.ad, yetkinlik: y.yetkinlik })),
     bakan: r.bakan === null ? null : Number(r.bakan),
     aktarildi: n(r.notAdet) > 0,
     aktaranNot: n(r.notAdet) ? { yazan: r.notYazan, ts: r.notTs ? r.notTs.toISOString() : "", adet: n(r.notAdet) } : null,
@@ -209,7 +207,7 @@ export async function devirAyarla(izinId: number, cariKod: string, bakanId: numb
   await logla("izin_devir", cariKod, `izinde bakan (izin #${izinId})`, eski?.ad ?? null, yeni?.ad ?? null, kullanici);
 }
 
-/** 1. yedek uygunsa (kendisi izinde değilse) ona, değilse 2.'ye; ikisi de yoksa dokunmaz. */
+/** Sırayla ilk uygun yedeğe (kendisi izinde olmayan); hiçbiri uygun değilse dokunmaz. */
 export async function otomatikAta(izinId: number, kullanici: string) {
   const t = await tahta(izinId);
   if (!t) throw new Error("İzin bulunamadı.");
@@ -217,7 +215,7 @@ export async function otomatikAta(izinId: number, kullanici: string) {
   let atanan = 0;
   for (const s of t.satirlar) {
     if (s.bakan !== null) continue;
-    const secim = uygun(s.yedek1?.id) ? s.yedek1!.id : uygun(s.yedek2?.id) ? s.yedek2!.id : null;
+    const secim = s.yedekler.find((y) => uygun(y.id))?.id ?? null;
     if (secim === null) continue;
     await devirAyarla(izinId, s.kod, secim, kullanici);
     atanan++;

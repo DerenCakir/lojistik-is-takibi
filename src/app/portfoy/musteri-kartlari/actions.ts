@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { portfoyYetki, yazabilir } from "@/lib/portfoy";
 import {
-  kartDetay, notEkle, notGecerlilik, yedekAyarla, turEkle, turGuncelle, turler,
+  kartDetay, notEkle, notGecerlilik, yedekEkle, yedekSil, yedekYetkinlik, yedekSira, turEkle, turGuncelle, turler,
   type KartDetay, type Tur,
 } from "@/lib/portfoy-kart";
 
@@ -46,13 +46,25 @@ export async function notGecerlilikAction(kod: string, id: number, gecerli: bool
   } catch (e) { return hata(e, "Güncellenemedi."); }
 }
 
-export async function yedekAction(kod: string, sira: 1 | 2, temsilciId: number | null): Promise<Sonuc<KartDetay | null>> {
-  try {
-    const u = await yetkiGerek();
-    await yedekAyarla(kod, sira, temsilciId, u.username);
-    tazele();
-    return { ok: true, veri: await kartDetay(kod), mesaj: "Yedek kaydedildi." };
-  } catch (e) { return hata(e, "Yedek kaydedilemedi."); }
+export async function yedekEkleAction(kod: string, temsilciId: number): Promise<Sonuc<KartDetay | null>> {
+  try { const u = await yetkiGerek(); await yedekEkle(kod, temsilciId, u.username); tazele();
+        return { ok: true, veri: await kartDetay(kod), mesaj: "Yedek eklendi." }; }
+  catch (e) { return hata(e, "Yedek eklenemedi."); }
+}
+export async function yedekSilAction(kod: string, temsilciId: number): Promise<Sonuc<KartDetay | null>> {
+  try { const u = await yetkiGerek(); await yedekSil(kod, temsilciId, u.username); tazele();
+        return { ok: true, veri: await kartDetay(kod), mesaj: "Yedek çıkarıldı." }; }
+  catch (e) { return hata(e, "Çıkarılamadı."); }
+}
+export async function yedekYetkinlikAction(kod: string, temsilciId: number, yetkinlik: string): Promise<Sonuc<KartDetay | null>> {
+  try { const u = await yetkiGerek(); await yedekYetkinlik(kod, temsilciId, yetkinlik, u.username); tazele();
+        return { ok: true, veri: await kartDetay(kod), mesaj: "Not kaydedildi." }; }
+  catch (e) { return hata(e, "Kaydedilemedi."); }
+}
+export async function yedekSiraAction(kod: string, temsilciId: number, yon: "yukari" | "asagi"): Promise<Sonuc<KartDetay | null>> {
+  try { const u = await yetkiGerek(); await yedekSira(kod, temsilciId, yon, u.username); tazele();
+        return { ok: true, veri: await kartDetay(kod) }; }
+  catch (e) { return hata(e, "Sıra değiştirilemedi."); }
 }
 
 export async function turEkleAction(ad: string, onemli: boolean): Promise<Sonuc<Tur[]>> {

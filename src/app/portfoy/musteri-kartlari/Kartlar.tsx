@@ -7,7 +7,8 @@ import IzinDevir from "./IzinDevir";
 import Hatirlatmalar from "./Hatirlatmalar";
 import { hatirlatmaEkleAction, hatirlatmalarAction } from "./actions";
 import {
-  detayAction, notEkleAction, notGecerlilikAction, yedekAction,
+  detayAction, notEkleAction, notGecerlilikAction,
+  yedekEkleAction, yedekSilAction, yedekYetkinlikAction, yedekSiraAction,
   turEkleAction, turGuncelleAction,
 } from "./actions";
 
@@ -221,32 +222,45 @@ export default function Kartlar({ liste, turler: ilkTurler, temsilciler, yazar, 
 
             {/* ---- yedekler ---- */}
             <div className="mk-bolum">
-              <h3>Yedek temsilciler <span className="aciklama">asıl temsilci yokken kim bakabilir · puana girmez</span></h3>
+              <h3>Yedek temsilciler <span className="aciklama">asıl temsilci yokken kim bakabilir · sıralı, sayı sınırsız · puana girmez</span></h3>
+              {detay.yedekler.length === 0 && <div className="mk-bos kucuk">Henüz yedek seçilmedi.</div>}
               <div className="mk-yedekler">
-                {([1, 2] as const).map((sira) => {
-                  const y = detay.yedekler.find((x) => x.sira === sira);
-                  return (
-                    <div key={sira} className={"mk-yedek" + (y ? "" : " bos")}>
-                      <div className="no">{sira}. YEDEK</div>
-                      <select value={y?.temsilci_id ?? ""} disabled={!yazar || bekle}
-                              onChange={(e) => {
-                                const v = e.target.value ? Number(e.target.value) : null;
-                                baslat(async () => uygula(await yedekAction(detay.kod, sira, v)));
-                              }}>
-                        <option value="">— seçilmedi —</option>
-                        {temsilciler
-                          .filter((t) => !detay.temsilci.startsWith(t.ad))
-                          .map((t) => <option key={t.id} value={t.id}>{t.ad}{t.ekip ? ` · ${ekipAd(t.ekip)}` : ""}</option>)}
-                      </select>
-                      <div className="ipucu">
-                        {y ? `${ekipAd(y.ekip) || "ekip —"} · puanı ${nf(y.puan)} · ${nf(y.cari_sayisi)} cari`
-                           : (yazar ? "Bu müşteriye bakabilecek ikinci kişi." : "Seçilmemiş.")}
-                        {y && detay.ekip && y.ekip && y.ekip !== detay.ekip && <b className="uyari"> · farklı ekip</b>}
-                      </div>
+                {detay.yedekler.map((y, i) => (
+                  <div key={y.temsilci_id} className="mk-yedek">
+                    <div className="ust">
+                      <span className="no">{i + 1}. YEDEK</span>
+                      <b className="ad">{y.ad}</b>
+                      <span className="ipucu">{ekipAd(y.ekip) || "ekip —"} · puanı {nf(y.puan)} · {nf(y.cari_sayisi)} cari
+                        {detay.ekip && y.ekip && y.ekip !== detay.ekip && <b className="uyari"> · farklı ekip</b>}</span>
+                      {yazar && <span className="islem">
+                        <button type="button" className="mk-link" disabled={bekle || i === 0} title="yukarı"
+                                onClick={() => baslat(async () => uygula(await yedekSiraAction(detay.kod, y.temsilci_id, "yukari")))}>▲</button>
+                        <button type="button" className="mk-link" disabled={bekle || i === detay.yedekler.length - 1} title="aşağı"
+                                onClick={() => baslat(async () => uygula(await yedekSiraAction(detay.kod, y.temsilci_id, "asagi")))}>▼</button>
+                        <button type="button" className="mk-link sil" disabled={bekle}
+                                onClick={() => { if (confirm(y.ad + " yedeklikten çıkarılsın mı?")) baslat(async () => uygula(await yedekSilAction(detay.kod, y.temsilci_id))); }}>çıkar</button>
+                      </span>}
                     </div>
-                  );
-                })}
+                    <textarea className="yetkinlik" defaultValue={y.yetkinlik ?? ""} disabled={!yazar || bekle}
+                              placeholder="Bu yedek neleri yapabilir? (ör. sevkiyat ve ASN'yi bilir, fatura sürecini bilmez) · odak çıkınca veya Ctrl+Enter ile kaydolur"
+                              onKeyDown={(e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) (e.target as HTMLTextAreaElement).blur(); }}
+                              onBlur={(e) => { if ((e.target.value.trim() || "") !== (y.yetkinlik ?? ""))
+                                baslat(async () => uygula(await yedekYetkinlikAction(detay.kod, y.temsilci_id, e.target.value))); }} />
+                  </div>
+                ))}
               </div>
+              {yazar && (
+                <div className="mk-yedek-ekle">
+                  <select value="" disabled={bekle}
+                          onChange={(e) => { const v = Number(e.target.value); if (v) baslat(async () => uygula(await yedekEkleAction(detay.kod, v))); }}>
+                    <option value="">+ yedek ekle…</option>
+                    {temsilciler
+                      .filter((t) => !detay.temsilci.startsWith(t.ad) && !detay.yedekler.some((y) => y.temsilci_id === t.id))
+                      .map((t) => <option key={t.id} value={t.id}>{t.ad}{t.ekip ? " · " + ekipAd(t.ekip) : ""}</option>)}
+                  </select>
+                  <span className="kucuk">Sıra önceliktir: izinde önce 1. yedek denenir. Süreç bilgisi notlarda; buraya yalnız bu kişinin neyi bildiğini yaz.</span>
+                </div>
+              )}
             </div>
 
             {/* ---- hatırlatmalar ---- */}

@@ -243,18 +243,19 @@ function TahtaGorunum({ t, turler, yazar, bekle, baslat, sonuc, mesajVer, iptalE
                   <tr key={s.kod}>
                     <td><div className="pf-name">{s.ad}</div><div className="pf-sub">{s.kod}{s.pay < 99.99 ? ` · %${Math.round(s.pay)} pay` : ""}</div></td>
                     <td className="num">{nf(s.yuk)}</td>
-                    <td className="kucuk">1. {s.yedek1?.ad ?? "—"}<br />2. {s.yedek2?.ad ?? "—"}</td>
+                    <td className="kucuk">{s.yedekler.length === 0 ? "—" : s.yedekler.map((y, i) => (
+                      <div key={y.id} title={y.yetkinlik ?? ""}>{i + 1}. {y.ad}{y.yetkinlik ? <span className="pf-muted"> · {y.yetkinlik.length > 40 ? y.yetkinlik.slice(0, 38) + "…" : y.yetkinlik}</span> : ""}</div>))}</td>
                     <td>
                       <select value={s.bakan ?? ""} disabled={!yazar || bekle}
-                              className={cak ? "hata" : (!s.bakan && !s.yedek1 ? "uyari" : "")}
+                              className={cak ? "hata" : (!s.bakan && !s.yedekler.length ? "uyari" : "")}
                               onChange={(e) => baslat(async () => sonuc(await devirAction(izin.id, s.kod, e.target.value ? Number(e.target.value) : null)))}>
                         <option value="">— seçilmedi —</option>
                         {adaylar.map((a) => <option key={a.id} value={a.id}>{a.ad}{a.izinde ? " (izinli!)" : ""}</option>)}
                       </select>
-                      <div className={"ipucu" + (cak ? " hata" : farkliEkip || (!s.bakan && !s.yedek1) ? " uyari" : "")}>
+                      <div className={"ipucu" + (cak ? " hata" : farkliEkip || (!s.bakan && !s.yedekler.length) ? " uyari" : "")}>
                         {cak ? `${b!.ad} ${kisa(b!.izinde!.baslangic)}–${kisa(b!.izinde!.bitis)} kendisi de izinli — ${cak} gün çakışıyor.`
                           : b ? `${b.ekip === "YD" ? "Yurtdışı" : b.ekip === "YI" ? "Yurtiçi" : "ekip —"} · puanı ${nf(b.puan)} · bu izinle +${b.eklenen} müşteri${farkliEkip ? " · farklı ekip" : ""}`
-                          : !s.yedek1 ? "Yedeği tanımlı değil. Müşteri kartından yedek ata ya da burada birini seç." : "Henüz seçilmedi."}
+                          : !s.yedekler.length ? "Yedeği tanımlı değil. Müşteri kartından yedek ata ya da burada birini seç." : "Henüz seçilmedi."}
                       </div>
                     </td>
                     <td>

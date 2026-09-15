@@ -20,7 +20,7 @@ export type KartSatir = {
 };
 
 export type Yedek = { sira: number; temsilci_id: number; ad: string; ekip: string | null;
-                      puan: number; cari_sayisi: number };
+                      puan: number; cari_sayisi: number; yetkinlik: string | null };
 export type Not = { id: number; tur_id: number | null; tur: string; onemli: boolean;
                     metin: string; yazan: string | null; ts: string; gecerli: boolean;
                     izin: string | null };   // devir notuysa "AD · 10.10–24.10"
@@ -105,14 +105,14 @@ export async function kartDetay(kod: string): Promise<KartDetay | null> {
     where kayit_id = ${kod} order by ts desc limit 1`;
 
   const yedekler = await db.$queryRaw<{
-    sira: number; temsilci_id: bigint; ad: string; ekip: string | null; puan: number; cari_sayisi: number;
+    sira: number; temsilci_id: bigint; ad: string; ekip: string | null; puan: number; cari_sayisi: number; yetkinlik: string | null;
   }[]>`
     select y.sira, y.temsilci_id, t.ad, t.ekip,
-           coalesce(tp.puan, 0) as puan, coalesce(tp.cari_sayisi, 0) as cari_sayisi
+           coalesce(tp.puan, 0) as puan, coalesce(tp.cari_sayisi, 0) as cari_sayisi, y.yetkinlik
     from portfoy.cari_yedek y
     join portfoy.temsilci t on t.id = y.temsilci_id
     left join portfoy.v_temsilci_puan tp on tp.temsilci_id = y.temsilci_id
-    where y.cari_kod = ${kod} order by y.sira`;
+    where y.cari_kod = ${kod} order by y.sira, t.ad`;
 
   const notlar = await db.$queryRaw<{
     id: bigint; tur_id: bigint | null; tur: string | null; onemli: boolean | null;
@@ -143,7 +143,7 @@ export async function kartDetay(kod: string): Promise<KartDetay | null> {
     sonDegisiklik: son ? { ts: son.ts.toISOString(), kullanici: son.kullanici } : null,
     yedekler: yedekler.map((y) => ({
       sira: y.sira, temsilci_id: Number(y.temsilci_id), ad: y.ad, ekip: y.ekip,
-      puan: Number(y.puan), cari_sayisi: Number(y.cari_sayisi),
+      puan: Number(y.puan), cari_sayisi: Number(y.cari_sayisi), yetkinlik: y.yetkinlik,
     })),
     notlar: notlar.map((x) => ({
       id: Number(x.id), tur_id: x.tur_id === null ? null : Number(x.tur_id),
@@ -211,26 +211,54 @@ export async function notGecerlilik(id: number, gecerli: boolean, kullanici: str
               gecerli ? "geçersiz" : "geçerli", gecerli ? "geçerli" : "geçersiz", kullanici);
 }
 
-export async function yedekAyarla(kod: string, sira: 1 | 2, temsilciId: number | null, kullanici: string) {
-  const [eski] = await db.$queryRaw<{ ad: string }[]>`
-    select t.ad from portfoy.cari_yedek y join portfoy.temsilci t on t.id = y.temsilci_id
-    where y.cari_kod = ${kod} and y.sira = ${sira}`;
-  if (temsilciId === null) {
-    await db.$executeRaw`delete from portfoy.cari_yedek where cari_kod = ${kod} and sira = ${sira}`;
-  } else {
-    // aynı kişi iki sırada olmasın
-    const [ayni] = await db.$queryRaw<{ sira: number }[]>`
-      select sira from portfoy.cari_yedek where cari_kod = ${kod} and temsilci_id = ${temsilciId} and sira <> ${sira}`;
-    if (ayni) throw new Error("Aynı temsilci hem 1. hem 2. yedek olamaz.");
-    await db.$executeRaw`
-      insert into portfoy.cari_yedek (cari_kod, sira, temsilci_id, guncelleyen)
-      values (${kod}, ${sira}, ${temsilciId}, ${kullanici})
-      on conflict (cari_kod, sira) do update
-        set temsilci_id = excluded.temsilci_id, guncelleyen = excluded.guncelleyen, guncelleme = now()`;
+export async function yedekEkle(kod: string, temsilciId: number, kullanici: string) {
+  const [var_] = await db.$queryRaw<{ n: bigint }[]>`
+    select count(*) n from portfoy.cari_yedek where cari_kod = ${kod} and temsilci_id = ${temsilciId}`;
+  if (n(var_.n)) throw new Error("Bu kişi zaten yedek.");
+  const [asil] = await db.$queryRaw<{ n: bigint }[]>`
+    select count(*) n from portfoy.portfoy where cari_kod = ${kod} and temsilci_id = ${temsilciId}`;
+  if (n(asil.n)) throw new Error("Asıl temsilci kendine yedek olamaz.");
+  await db.$executeRaw`
+    insert into portfoy.cari_yedek (cari_kod, temsilci_id, sira, guncelleyen)
+    values (${kod}, ${temsilciId},
+            (select coalesce(max(sira), 0) + 1 from portfoy.cari_yedek where cari_kod = ${kod}), ${kullanici})`;
+  const [t] = await db.$queryRaw<{ ad: string }[]>`select ad from portfoy.temsilci where id = ${temsilciId}`;
+  await logla("cari_yedek", kod, "yedek eklendi", null, t?.ad ?? null, kullanici);
+}
+
+export async function yedekSil(kod: string, temsilciId: number, kullanici: string) {
+  const [t] = await db.$queryRaw<{ ad: string }[]>`
+    delete from portfoy.cari_yedek y using portfoy.temsilci t
+    where y.cari_kod = ${kod} and y.temsilci_id = ${temsilciId} and t.id = y.temsilci_id returning t.ad`;
+  if (!t) throw new Error("Yedek bulunamadı.");
+  await logla("cari_yedek", kod, "yedek çıkarıldı", t.ad, null, kullanici);
+}
+
+/** "Bu yedek neleri yapabilir" notu. */
+export async function yedekYetkinlik(kod: string, temsilciId: number, yetkinlik: string, kullanici: string) {
+  const y = yetkinlik.trim().slice(0, 1000) || null;
+  const [r] = await db.$queryRaw<{ ad: string; eski: string | null }[]>`
+    select t.ad, y.yetkinlik as eski from portfoy.cari_yedek y join portfoy.temsilci t on t.id = y.temsilci_id
+    where y.cari_kod = ${kod} and y.temsilci_id = ${temsilciId}`;
+  if (!r) throw new Error("Yedek bulunamadı.");
+  if ((r.eski ?? "") === (y ?? "")) return;
+  await db.$executeRaw`update portfoy.cari_yedek set yetkinlik = ${y}, guncelleyen = ${kullanici}, guncelleme = now()
+    where cari_kod = ${kod} and temsilci_id = ${temsilciId}`;
+  await logla("cari_yedek", kod, `yetkinlik · ${r.ad}`, r.eski, y, kullanici);
+}
+
+/** Sırayı bir yukarı/aşağı taşı. */
+export async function yedekSira(kod: string, temsilciId: number, yon: "yukari" | "asagi", kullanici: string) {
+  const liste = await db.$queryRaw<{ temsilci_id: bigint; sira: number }[]>`
+    select temsilci_id, sira from portfoy.cari_yedek where cari_kod = ${kod} order by sira, temsilci_id`;
+  const i = liste.findIndex((x) => Number(x.temsilci_id) === temsilciId);
+  const j = yon === "yukari" ? i - 1 : i + 1;
+  if (i < 0 || j < 0 || j >= liste.length) return;
+  [liste[i], liste[j]] = [liste[j], liste[i]];
+  for (let k = 0; k < liste.length; k++) {
+    await db.$executeRaw`update portfoy.cari_yedek set sira = ${k + 1} where cari_kod = ${kod} and temsilci_id = ${liste[k].temsilci_id}`;
   }
-  const [yeni] = temsilciId === null ? [null]
-    : await db.$queryRaw<{ ad: string }[]>`select ad from portfoy.temsilci where id = ${temsilciId}`;
-  await logla("cari_yedek", kod, `${sira}. yedek`, eski?.ad ?? null, yeni?.ad ?? null, kullanici);
+  await logla("cari_yedek", kod, "yedek sırası", null, liste.map((x, k) => `${k + 1}:${x.temsilci_id}`).join(" "), kullanici);
 }
 
 export async function turEkle(ad: string, onemli: boolean, kullanici: string) {

@@ -483,3 +483,74 @@ a.item:hover{border-color:color-mix(in srgb, var(--brand) 42%, var(--line)); box
 .ym-alt{display:flex; align-items:center; gap:14px; flex-wrap:wrap}
 .ym-ipucu{font-size:12px; color:var(--muted)}
 @media (max-width:720px){ .ym-satir{flex-direction:column} }
+
+/* ---- portföy: müşteri kartları (mk-) ---- */
+.mk-lyt{display:grid; grid-template-columns:360px 1fr; gap:16px; padding:16px 18px; max-width:1700px; margin:0 auto; align-items:start}
+.mk-liste{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 110px); position:sticky; top:16px}
+.mk-ara{width:100%}
+.mk-filt{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+.mk-filt select{width:100%; min-width:0}
+.mk-hizli{display:flex; gap:6px; flex-wrap:wrap}
+.mk-hizli button{border:1px solid var(--line); background:var(--panel); border-radius:99px; padding:3px 10px; font-size:11.5px; color:var(--muted); cursor:pointer; font:inherit}
+.mk-hizli button.on{background:color-mix(in srgb,var(--brand) 12%,var(--panel)); border-color:var(--brand); color:var(--brand); font-weight:600}
+.mk-satirlar{overflow:auto; flex:1; border-top:1px solid var(--line); margin:0 -14px; padding:0 14px}
+.mk-sat{display:grid; grid-template-columns:1fr auto; gap:4px 10px; padding:9px 6px; border-bottom:1px solid var(--line); cursor:pointer; border-radius:8px}
+.mk-sat:hover{background:var(--panel2)}
+.mk-sat.on{background:color-mix(in srgb,var(--brand) 10%,var(--panel))}
+.mk-sat.pasif .ad{opacity:.5; text-decoration:line-through}
+.mk-sat .ad{font-weight:600; font-size:12.5px}
+.mk-sat .kod{font-family:ui-monospace,Menlo,monospace; font-size:11px; color:var(--muted)}
+.mk-sat .tem{font-size:11.5px; color:var(--muted)}
+.mk-sat .roz{display:flex; gap:4px; justify-content:flex-end; align-items:flex-start; flex-wrap:wrap; max-width:110px}
+.mk-sat .r{font-size:10px; font-weight:700; border-radius:4px; padding:1px 6px; white-space:nowrap}
+.mk-sat .r.yok{background:#fbe6e0; color:#a3371f}
+.mk-sat .r.var{background:#e3f5ee; color:#12715a}
+.mk-sat .r.n{background:color-mix(in srgb,var(--brand) 12%,var(--panel)); color:var(--brand)}
+.mk-sat .r.dikkat{background:#fdf4dd; color:#8a6209; padding:1px 7px}
+.mk-detay{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:20px 22px; display:flex; flex-direction:column; gap:18px; min-height:400px}
+.mk-bos{color:var(--muted); font-size:13px; padding:20px; text-align:center}
+.mk-bos.kucuk{padding:10px; font-size:12px}
+.mk-bas h2{margin:0; font-size:21px; line-height:1.15}
+.mk-bas .meta{display:flex; gap:6px; flex-wrap:wrap; margin-top:8px}
+.mk-bas .badge{font-family:ui-monospace,Menlo,monospace; font-size:10.5px; padding:2px 8px; border-radius:5px; background:var(--panel2); border:1px solid var(--line); color:var(--muted)}
+.mk-bas .badge.mavi{background:color-mix(in srgb,var(--brand) 12%,var(--panel)); color:var(--brand)}
+.mk-bas .badge.yesil{background:#e3f5ee; color:#12715a}
+.mk-bas .badge.kirmizi{background:#fbe6e0; color:#a3371f}
+.mk-canli{display:grid; grid-template-columns:repeat(5,1fr); gap:10px; background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:14px 14px 12px; position:relative}
+.mk-canli .k{font-family:ui-monospace,Menlo,monospace; font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em}
+.mk-canli .v{font-weight:700; font-size:18px; line-height:1.2; margin-top:2px}
+.mk-canli .v.kucuk{font-size:12.5px; font-weight:600}
+.mk-canli .v small{font-size:11px; color:var(--muted); font-weight:500}
+.mk-canli .etiket{position:absolute; right:12px; top:-9px; background:#e3f5ee; color:#12715a; font-size:10px; font-weight:700; padding:1px 8px; border-radius:99px; border:1px solid #bfe6d6}
+.mk-bolum h3{margin:0 0 8px; font-size:14px; display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+.mk-bolum h3 .aciklama{font-weight:400; font-size:11.5px; color:var(--muted)}
+.mk-link{margin-left:auto; background:none; border:none; font:inherit; font-size:11.5px; color:var(--brand); cursor:pointer; padding:0}
+.mk-link:disabled{opacity:.5; cursor:default}
+.mk-yedekler{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+.mk-yedek{border:1px solid var(--line); border-radius:10px; padding:12px 14px}
+.mk-yedek.bos{border-style:dashed; background:#fffaf5}
+.mk-yedek .no{font-family:ui-monospace,Menlo,monospace; font-size:10px; color:var(--muted); letter-spacing:.1em}
+.mk-yedek select{width:100%; margin-top:6px}
+.mk-yedek .ipucu{font-size:11px; color:var(--muted); margin-top:6px}
+.mk-yedek .uyari{color:#8a6209}
+.mk-notlar{display:flex; flex-direction:column; gap:10px}
+.mk-not{border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.mk-not .nb{display:flex; align-items:center; gap:10px; padding:8px 14px; background:var(--panel2); border-bottom:1px solid var(--line)}
+.mk-not .nb b{font-size:12.5px}
+.mk-not .nb .kim{font-family:ui-monospace,Menlo,monospace; font-size:10.5px; color:var(--muted)}
+.mk-not .nb .gecersiz{color:#a3371f; font-size:10.5px}
+.mk-not p{margin:0; padding:12px 14px; white-space:pre-line; font-size:13px; line-height:1.55}
+.mk-not.eski{opacity:.55}
+.mk-not.dikkat .nb{background:#fdf4dd}
+.mk-ekle{border:1px dashed var(--line); border-radius:10px; padding:14px; margin-top:12px; background:var(--panel2)}
+.mk-ekle .satir{display:grid; grid-template-columns:220px 1fr; gap:10px; margin-bottom:10px}
+.mk-ekle select{width:100%}
+.mk-ekle textarea{width:100%; min-height:80px; resize:vertical; font:inherit; padding:8px 10px}
+.mk-ekle .alt{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+.mk-basliklar{border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-bottom:12px; background:var(--panel2); display:flex; flex-direction:column; gap:10px}
+.mk-btbl td input[type=text],.mk-btbl td input:not([type]){width:100%; padding:4px 8px}
+.mk-btbl tr.pasif td{opacity:.5}
+.mk-bekle{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+.mk-bekle input[type=text],.mk-bekle input:not([type]){min-width:220px}
+.kucuk{font-size:11.5px; color:var(--muted)}
+@media (max-width:1000px){ .mk-lyt{grid-template-columns:1fr} .mk-liste{height:auto; position:static; max-height:50vh} .mk-canli{grid-template-columns:repeat(2,1fr)} .mk-ekle .satir{grid-template-columns:1fr} }

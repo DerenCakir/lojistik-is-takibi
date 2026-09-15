@@ -11,6 +11,9 @@ const BASLIK: Record<string, string> = {
   portfoy: "Temsilci ataması",
   temsilci: "Temsilci kadrosu",
   teslim_noktasi: "Teslim noktası durumu",
+  cari_not: "Müşteri notu",
+  cari_yedek: "Yedek temsilci",
+  not_turu: "Not başlığı",
   "(tam kayit)": "Kaydetme",
   "(veri yukleme)": "Excel veri yükleme",
 };

@@ -38,6 +38,9 @@ export default async function PortfoyPortalPage() {
           <Icon name="clock" size={13} /> {sonMetin}
         </Link>
         <span className="pfp-ara" />
+        <Link href="/portfoy/musteri-kartlari" className="pfp-eylem">
+          <Icon name="users" size={14} /> Müşteri kartları
+        </Link>
         {yazar && (
           <Link href="/portfoy/temsilciler" className="pfp-eylem">
             <Icon name="users" size={14} /> Temsilciler

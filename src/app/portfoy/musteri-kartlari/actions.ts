@@ -72,3 +72,65 @@ export async function turGuncelleAction(id: number, ad: string, onemli: boolean,
     return { ok: true, veri: await turler() };
   } catch (e) { return hata(e, "Başlık güncellenemedi."); }
 }
+
+/* ======================= izin & devir · hatırlatmalar ======================= */
+import {
+  izinler, izinEkle, izinIptal, tahta, devirAyarla, otomatikAta,
+  hatirlatmaEkle, hatirlatmaDurum, hatirlatmaSil, hatirlatmalar,
+  type Izin, type IzinTur, type Tahta, type Hatirlatma,
+} from "@/lib/portfoy-izin";
+
+export async function izinlerAction(): Promise<Sonuc<Izin[]>> {
+  try { await requireUser(); return { ok: true, veri: await izinler() }; }
+  catch (e) { return hata(e, "İzinler okunamadı."); }
+}
+export async function izinEkleAction(temsilciId: number, baslangic: string, bitis: string,
+                                     tur: IzinTur, aciklama: string | null): Promise<Sonuc<Izin[]>> {
+  try { const u = await yetkiGerek(); await izinEkle(temsilciId, baslangic, bitis, tur, aciklama, u.username);
+        tazele(); return { ok: true, veri: await izinler(), mesaj: "İzin eklendi." }; }
+  catch (e) { return hata(e, "İzin eklenemedi."); }
+}
+export async function izinIptalAction(id: number): Promise<Sonuc<Izin[]>> {
+  try { const u = await yetkiGerek(); await izinIptal(id, u.username);
+        tazele(); return { ok: true, veri: await izinler(), mesaj: "İzin iptal edildi." }; }
+  catch (e) { return hata(e, "İptal edilemedi."); }
+}
+export async function tahtaAction(izinId: number): Promise<Sonuc<Tahta | null>> {
+  try { await requireUser(); return { ok: true, veri: await tahta(izinId) }; }
+  catch (e) { return hata(e, "Tahta okunamadı."); }
+}
+export async function devirAction(izinId: number, cariKod: string, bakanId: number | null): Promise<Sonuc<Tahta | null>> {
+  try { const u = await yetkiGerek(); await devirAyarla(izinId, cariKod, bakanId, u.username);
+        tazele(); return { ok: true, veri: await tahta(izinId) }; }
+  catch (e) { return hata(e, "Kaydedilemedi."); }
+}
+export async function otomatikAtaAction(izinId: number): Promise<Sonuc<Tahta | null>> {
+  try { const u = await yetkiGerek(); const n = await otomatikAta(izinId, u.username);
+        tazele(); return { ok: true, veri: await tahta(izinId), mesaj: n ? `${n} müşteri yedeğine atandı.` : "Atanacak uygun yedek bulunamadı." }; }
+  catch (e) { return hata(e, "Otomatik atama yapılamadı."); }
+}
+export async function devirNotuAction(izinId: number, cariKod: string, turId: number | null, metin: string): Promise<Sonuc<Tahta | null>> {
+  try { const u = await yetkiGerek(); await notEkle(cariKod, turId, metin, u.username, izinId);
+        tazele(); return { ok: true, veri: await tahta(izinId), mesaj: "Devir notu kaydedildi." }; }
+  catch (e) { return hata(e, "Not kaydedilemedi."); }
+}
+export async function hatirlatmaEkleAction(cariKod: string, tarih: string, metin: string,
+                                           izinId: number | null, sorumluId: number | null): Promise<Sonuc<undefined>> {
+  try { const u = await yetkiGerek(); await hatirlatmaEkle(cariKod, tarih, metin, izinId, sorumluId, u.username);
+        tazele(); return { ok: true, veri: undefined, mesaj: "Hatırlatma eklendi." }; }
+  catch (e) { return hata(e, "Hatırlatma eklenemedi."); }
+}
+export async function hatirlatmaDurumAction(id: number, yapildi: boolean): Promise<Sonuc<Hatirlatma[]>> {
+  try { const u = await yetkiGerek(); await hatirlatmaDurum(id, yapildi, u.username);
+        tazele(); return { ok: true, veri: await hatirlatmalar() }; }
+  catch (e) { return hata(e, "Güncellenemedi."); }
+}
+export async function hatirlatmaSilAction(id: number): Promise<Sonuc<Hatirlatma[]>> {
+  try { const u = await yetkiGerek(); await hatirlatmaSil(id, u.username);
+        tazele(); return { ok: true, veri: await hatirlatmalar() }; }
+  catch (e) { return hata(e, "Silinemedi."); }
+}
+export async function hatirlatmalarAction(): Promise<Sonuc<Hatirlatma[]>> {
+  try { await requireUser(); return { ok: true, veri: await hatirlatmalar() }; }
+  catch (e) { return hata(e, "Hatırlatmalar okunamadı."); }
+}

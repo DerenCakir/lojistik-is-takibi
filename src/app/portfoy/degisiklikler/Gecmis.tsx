@@ -14,6 +14,9 @@ const BASLIK: Record<string, string> = {
   cari_not: "Müşteri notu",
   cari_yedek: "Yedek temsilci",
   not_turu: "Not başlığı",
+  izin: "İzin",
+  izin_devir: "İzinde bakan",
+  hatirlatma: "Hatırlatma",
   "(tam kayit)": "Kaydetme",
   "(veri yukleme)": "Excel veri yükleme",
 };

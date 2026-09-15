@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { portfoyYetki, yazabilir } from "@/lib/portfoy";
 import { kartListesi, temsilciler, turler } from "@/lib/portfoy-kart";
+import { izinler, hatirlatmalar } from "@/lib/portfoy-izin";
 import Icon from "@/components/Icon";
 import Kartlar from "./Kartlar";
 
@@ -18,8 +19,8 @@ export default async function MusteriKartlariPage() {
   if (!user) redirect("/login");
   const yazar = yazabilir(portfoyYetki(user));
 
-  const [liste, turListesi, temsilciListesi] = await Promise.all([
-    kartListesi(), turler(), temsilciler(),
+  const [liste, turListesi, temsilciListesi, izinListesi, hatListesi] = await Promise.all([
+    kartListesi(), turler(), temsilciler(), izinler(), hatirlatmalar(),
   ]);
 
   return (
@@ -32,7 +33,8 @@ export default async function MusteriKartlariPage() {
         <span className="pfp-ara" />
         <span className="pfp-user">{user.name}</span>
       </div>
-      <Kartlar liste={liste} turler={turListesi} temsilciler={temsilciListesi} yazar={yazar} />
+      <Kartlar liste={liste} turler={turListesi} temsilciler={temsilciListesi} yazar={yazar}
+               izinler={izinListesi} hatirlatmalar={hatListesi} />
     </div>
   );
 }

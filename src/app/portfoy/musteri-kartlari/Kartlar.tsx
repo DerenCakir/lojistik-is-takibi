@@ -2,6 +2,10 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import type { KartDetay, KartSatir, Temsilci, Tur } from "@/lib/portfoy-kart";
+import type { Izin, Hatirlatma } from "@/lib/portfoy-izin";
+import IzinDevir from "./IzinDevir";
+import Hatirlatmalar from "./Hatirlatmalar";
+import { hatirlatmaEkleAction, hatirlatmalarAction } from "./actions";
 import {
   detayAction, notEkleAction, notGecerlilikAction, yedekAction,
   turEkleAction, turGuncelleAction,
@@ -18,9 +22,23 @@ const ekipAd = (e: string | null) => e === "YD" ? "Yurtdışı" : e === "YI" ? "
 
 type Hizli = "hepsi" | "yedeksiz" | "notsuz" | "dikkat";
 
-export default function Kartlar({ liste, turler: ilkTurler, temsilciler, yazar }: {
+type Sekme = "musteriler" | "izin" | "hatirlatma";
+
+export default function Kartlar({ liste, turler: ilkTurler, temsilciler, yazar, izinler, hatirlatmalar: ilkHat }: {
   liste: KartSatir[]; turler: Tur[]; temsilciler: Temsilci[]; yazar: boolean;
+  izinler: Izin[]; hatirlatmalar: Hatirlatma[];
 }) {
+  const [sekme, setSekme] = useState<Sekme>("musteriler");
+  const [hatListesi, setHatListesi] = useState<Hatirlatma[]>(ilkHat);
+  const hatUyari = hatListesi.filter((h) => !h.yapildi && h.gecikme >= -7).length;
+  const [hatForm, setHatForm] = useState(false);
+  const [hatTarih, setHatTarih] = useState(new Date().toISOString().slice(0, 10));
+  const [hatMetin, setHatMetin] = useState("");
+  // Hatırlatmalar sekmesine her geçişte listeyi tazele (tahtadan/karttan eklenenler görünsün)
+  useEffect(() => {
+    if (sekme !== "hatirlatma") return;
+    hatirlatmalarAction().then((r) => { if (r.ok) setHatListesi(r.veri); });
+  }, [sekme]);
   const [ara, setAra] = useState("");
   const [fTem, setFTem] = useState("");
   const [fEkip, setFEkip] = useState("");
@@ -110,7 +128,18 @@ export default function Kartlar({ liste, turler: ilkTurler, temsilciler, yazar }
   };
 
   return (
-    <div className="mk-lyt">
+    <>
+    <div className="mk-sekmeler">
+      {([["musteriler", "Müşteriler"], ["izin", "İzin & Devir"], ["hatirlatma", "Hatırlatmalar"]] as [Sekme, string][]).map(([k, ad]) => (
+        <button type="button" key={k} className={"mk-sekme" + (sekme === k ? " on" : "")} onClick={() => setSekme(k)}>
+          {ad}{k === "izin" && izinler.filter((i) => i.durum !== "bitti").length > 0 && <span className="say mavi">{izinler.filter((i) => i.durum !== "bitti").length}</span>}
+          {k === "hatirlatma" && hatUyari > 0 && <span className="say">{hatUyari}</span>}
+        </button>))}
+    </div>
+    {mesaj && sekme !== "musteriler" && <div className={"tk-mesaj mk-ust-mesaj " + (mesaj.tip === "ok" ? "vy-basarili" : "tk-hata")}>{mesaj.metin}</div>}
+    {sekme === "izin" && <IzinDevir ilkIzinler={izinler} temsilciler={temsilciler} turler={turler} yazar={yazar} mesajVer={setMesaj} />}
+    {sekme === "hatirlatma" && <div className="iz-lyt"><Hatirlatmalar ilk={hatListesi} yazar={yazar} mesajVer={setMesaj} onDegis={setHatListesi} /></div>}
+    <div className="mk-lyt" hidden={sekme !== "musteriler"}>
       {/* ---------------- SOL: liste ---------------- */}
       <aside className="mk-liste">
         <input className="mk-ara" placeholder="müşteri adı veya cari kodu ara…"
@@ -171,6 +200,13 @@ export default function Kartlar({ liste, turler: ilkTurler, temsilciler, yazar }
               </div>
             </div>
 
+            {detay.izinler.map((z, i) => (
+              <div key={i} className={"mk-izin-serit " + z.durum}>
+                {z.durum === "suruyor"
+                  ? <>Bu müşteriye şu an <b>{z.bakan ?? "kimse seçilmedi"}</b> bakıyor — {z.temsilci} izinde, {tarih(z.baslangic)} – {tarih(z.bitis)}.</>
+                  : <>{z.temsilci} <b>{tarih(z.baslangic)} – {tarih(z.bitis)}</b> tarihlerinde izinli; bu müşteriye {z.bakan ? <b>{z.bakan}</b> : <b>henüz kimse</b>} bakacak.</>}
+                {!z.bakan && yazar && <button type="button" className="mk-link" onClick={() => setSekme("izin")}>İzin &amp; Devir'de seç →</button>}
+              </div>))}
             <div className="mk-canli">
               <span className="etiket">● canlı · ana portaldan</span>
               <div><div className="k">Yük katkısı</div><div className="v">{nf(detay.yuk)}</div></div>
@@ -213,6 +249,29 @@ export default function Kartlar({ liste, turler: ilkTurler, temsilciler, yazar }
               </div>
             </div>
 
+            {/* ---- hatırlatmalar ---- */}
+            <div className="mk-bolum">
+              <h3>Hatırlatmalar <span className="aciklama">tarihli yapılacaklar · bakan kişiye düşer</span>
+                {yazar && <button type="button" className="mk-link" onClick={() => { setHatForm((v) => !v); setHatMetin(""); }}>{hatForm ? "vazgeç" : "+ hatırlatma"}</button>}</h3>
+              {detay.hatirlatmalar.length === 0 && !hatForm && <div className="mk-bos kucuk">Bekleyen hatırlatma yok.</div>}
+              {detay.hatirlatmalar.map((h) => (
+                <div key={h.id} className={"mk-hat" + (h.yapildi ? " yapildi" : "")}>
+                  <span className="tar">{tarih(h.tarih)}</span><span>{h.metin}</span>
+                  <span className="kucuk">{h.sorumlu ?? ""}{h.yapildi ? " · yapıldı ✓" : ""}</span>
+                </div>))}
+              {hatForm && (
+                <div className="iz-mini-form" style={{ marginTop: 8 }}>
+                  <input type="date" value={hatTarih} onChange={(e) => setHatTarih(e.target.value)} />
+                  <input value={hatMetin} onChange={(e) => setHatMetin(e.target.value)} placeholder="ne yapılacak?" />
+                  <button type="button" className="btn" disabled={!hatMetin.trim() || bekle}
+                          onClick={() => baslat(async () => {
+                            const r = await hatirlatmaEkleAction(detay.kod, hatTarih, hatMetin, null, null);
+                            if (r.ok) { setHatForm(false); setMesaj({ tip: "ok", metin: r.mesaj ?? "" }); const d = await detayAction(detay.kod); if (d.ok) setDetay(d.veri); }
+                            else setMesaj({ tip: "hata", metin: r.hata });
+                          })}>Ekle</button>
+                </div>)}
+            </div>
+
             {/* ---- notlar ---- */}
             <div className="mk-bolum">
               <h3>Notlar <span className="aciklama">süreçler ve özel bilgiler · silinmez, eskiyen geçersiz işaretlenir</span>
@@ -229,7 +288,7 @@ export default function Kartlar({ liste, turler: ilkTurler, temsilciler, yazar }
                 {detay.notlar.map((x) => (
                   <div key={x.id} className={"mk-not" + (x.gecerli ? "" : " eski") + (x.onemli && x.gecerli ? " dikkat" : "")}>
                     <div className="nb">
-                      <b>{x.tur}{!x.gecerli && <span className="gecersiz"> · geçersiz</span>}</b>
+                      <b>{x.tur}{x.izin && <span className="devir"> · devir notu · {x.izin}</span>}{!x.gecerli && <span className="gecersiz"> · geçersiz</span>}</b>
                       <span className="kim">{x.yazan ?? "?"} · {tarih(x.ts)}</span>
                       {yazar && (
                         <button type="button" className="mk-link" disabled={bekle}
@@ -266,6 +325,7 @@ export default function Kartlar({ liste, turler: ilkTurler, temsilciler, yazar }
         )}
       </section>
     </div>
+    </>
   );
 }
 

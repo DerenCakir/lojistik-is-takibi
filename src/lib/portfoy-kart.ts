@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { kartIzinleri, type KartIzin } from "@/lib/portfoy-izin";
 
 /**
  * Müşteri Kartları — notlar ve yedek temsilciler.
@@ -21,7 +22,8 @@ export type KartSatir = {
 export type Yedek = { sira: number; temsilci_id: number; ad: string; ekip: string | null;
                       puan: number; cari_sayisi: number };
 export type Not = { id: number; tur_id: number | null; tur: string; onemli: boolean;
-                    metin: string; yazan: string | null; ts: string; gecerli: boolean };
+                    metin: string; yazan: string | null; ts: string; gecerli: boolean;
+                    izin: string | null };   // devir notuysa "AD · 10.10–24.10"
 export type Tur = { id: number; ad: string; sira: number; onemli: boolean; aktif: boolean; kullanim: number };
 export type Temsilci = { id: number; ad: string; ekip: string | null; puan: number; cari_sayisi: number };
 
@@ -32,6 +34,8 @@ export type KartDetay = {
   sonDegisiklik: { ts: string; kullanici: string | null } | null;
   yedekler: Yedek[];
   notlar: Not[];
+  izinler: KartIzin[];                          // temsilcisi izinde/yakında izinde mi, kim bakıyor
+  hatirlatmalar: { id: number; tarih: string; metin: string; yapildi: boolean; sorumlu: string | null }[];
 };
 
 const n = (v: unknown) => (v === null || v === undefined ? 0 : Number(v));
@@ -112,12 +116,24 @@ export async function kartDetay(kod: string): Promise<KartDetay | null> {
 
   const notlar = await db.$queryRaw<{
     id: bigint; tur_id: bigint | null; tur: string | null; onemli: boolean | null;
-    metin: string; yazan: string | null; ts: Date; gecerli: boolean;
+    metin: string; yazan: string | null; ts: Date; gecerli: boolean; izin: string | null;
   }[]>`
-    select x.id, x.tur_id, t.ad as tur, t.onemli, x.metin, x.yazan, x.ts, x.gecerli
+    select x.id, x.tur_id, t.ad as tur, t.onemli, x.metin, x.yazan, x.ts, x.gecerli,
+           (select ti.ad || ' · ' || to_char(i.baslangic,'DD.MM') || '–' || to_char(i.bitis,'DD.MM')
+              from portfoy.izin i join portfoy.temsilci ti on ti.id = i.temsilci_id
+             where i.id = x.izin_id) as izin
     from portfoy.cari_not x left join portfoy.not_turu t on t.id = x.tur_id
     where x.cari_kod = ${kod}
     order by x.gecerli desc, coalesce(t.onemli, false) desc, coalesce(t.sira, 999), x.ts desc`;
+
+  const izinlerK = await kartIzinleri(kod);
+  const hat = await db.$queryRaw<{ id: bigint; tarih: Date; metin: string; yapildi: boolean; sorumlu: string | null }[]>`
+    select h.id, h.tarih, h.metin, h.yapildi,
+           coalesce(ts.ad, (select tb.ad from portfoy.izin_devir d join portfoy.temsilci tb on tb.id = d.bakan_temsilci_id
+                              where d.izin_id = h.izin_id and d.cari_kod = h.cari_kod)) as sorumlu
+    from portfoy.hatirlatma h left join portfoy.temsilci ts on ts.id = h.sorumlu_temsilci_id
+    where h.cari_kod = ${kod} and (not h.yapildi or h.yapildi_ts > now() - interval '14 days')
+    order by h.yapildi, h.tarih`;
 
   return {
     kod: c.kod, ad: c.ad, kanal: c.kanal, aktif: c.aktif, segment: c.segment,
@@ -132,8 +148,11 @@ export async function kartDetay(kod: string): Promise<KartDetay | null> {
     notlar: notlar.map((x) => ({
       id: Number(x.id), tur_id: x.tur_id === null ? null : Number(x.tur_id),
       tur: x.tur ?? "(başlıksız)", onemli: !!x.onemli, metin: x.metin, yazan: x.yazan,
-      ts: x.ts.toISOString(), gecerli: x.gecerli,
+      ts: x.ts.toISOString(), gecerli: x.gecerli, izin: x.izin,
     })),
+    izinler: izinlerK,
+    hatirlatmalar: hat.map((h) => ({ id: Number(h.id), tarih: h.tarih.toISOString().slice(0, 10),
+                                     metin: h.metin, yapildi: h.yapildi, sorumlu: h.sorumlu })),
   };
 }
 
@@ -168,16 +187,17 @@ async function logla(tablo: string, kod: string, alan: string,
     values (${tablo}, ${kod}, ${alan}, ${eski}, ${yeni}, ${kullanici})`;
 }
 
-export async function notEkle(kod: string, turId: number | null, metin: string, kullanici: string) {
+export async function notEkle(kod: string, turId: number | null, metin: string, kullanici: string,
+                              izinId: number | null = null) {
   const m = metin.trim();
   if (!m) throw new Error("Not boş olamaz.");
   if (m.length > 4000) throw new Error("Not çok uzun (4000 karakter sınırı).");
   const [r] = await db.$queryRaw<{ id: bigint }[]>`
-    insert into portfoy.cari_not (cari_kod, tur_id, metin, yazan)
-    values (${kod}, ${turId}, ${m}, ${kullanici}) returning id`;
+    insert into portfoy.cari_not (cari_kod, tur_id, metin, yazan, izin_id)
+    values (${kod}, ${turId}, ${m}, ${kullanici}, ${izinId}) returning id`;
   const [t] = turId === null ? [null]
     : await db.$queryRaw<{ ad: string }[]>`select ad from portfoy.not_turu where id = ${turId}`;
-  await logla("cari_not", kod, `not · ${t?.ad ?? "başlıksız"}`, null,
+  await logla("cari_not", kod, `${izinId ? "devir notu" : "not"} · ${t?.ad ?? "başlıksız"}`, null,
               m.length > 120 ? m.slice(0, 117) + "…" : m, kullanici);
   return Number(r.id);
 }

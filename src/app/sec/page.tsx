@@ -17,6 +17,7 @@ export default async function SecPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   const temsilci = await temsilciKimligi(user);   // temsilci hesabı: portföy yerine "Portföyüm"
+  if (temsilci) redirect("/portfoy/portfoyum");     // temsilcinin tek portalı var; seçim ekranı gereksiz
 
   return (
     <div className="sec-wrap">

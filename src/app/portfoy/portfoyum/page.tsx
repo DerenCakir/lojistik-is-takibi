@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { temsilciKimligi } from "@/lib/portfoy";
@@ -31,8 +30,7 @@ export default async function PortfoyumPage() {
   return (
     <div className="pfp-wrap">
       <div className="pfp-bar">
-        <Link href="/sec" className="pfp-back"><Icon name="arrowLeft" size={15} /> Portal seçimi</Link>
-        <span className="pfp-title">Portföyüm</span>
+        <span className="pfp-title" style={{ marginLeft: 0 }}><Icon name="users" size={15} /> Portföyüm</span>
         <span className="pfp-ara" />
         <span className="pfp-user">{t?.ad ?? user.name}{t?.ekip ? ` · ${t.ekip === "YD" ? "Yurtdışı" : "Yurtiçi"}` : ""}</span>
         <form action={logoutAction}><button className="pfp-eylem" type="submit">Çıkış</button></form>

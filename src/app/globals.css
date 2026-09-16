@@ -678,3 +678,6 @@ a.item:hover{border-color:color-mix(in srgb, var(--brand) 42%, var(--line)); box
 .tk-hesap{display:flex; gap:6px; align-items:center}
 .tk-hesap input{width:150px; padding:4px 8px; font-size:12px}
 .tk-hesap .btn{padding:4px 9px; font-size:11.5px}
+.tk-hesap-ad{font-family:ui-monospace,Menlo,monospace; font-size:12px; background:var(--panel2); border:1px solid var(--line); border-radius:6px; padding:3px 8px}
+.tk-hesap-ac{flex-wrap:wrap}
+.tk-hesap-ac input{width:130px}

@@ -92,3 +92,34 @@ export async function kullaniciBaglaAction(fd: FormData): Promise<Sonuc> {
     return { ok: false, hata: e instanceof Error ? e.message : "Bağlanamadı." };
   }
 }
+
+/* ---- temsilci hesabi AC ve bagla (tek adim) ----
+   Hesap, Is Takibi'nin kullanici tablosuna acilir (tek giris korunur);
+   acma isini Is Takibi'nin kendi createUser eylemi yapar — sifre kurali,
+   kullanici adi kurali, mukerrer kontrolu oradakiyle birebir ayni.
+   Yalniz admin (Is Takibi'ndeki kuralla ayni). Sifreyi yonetici belirler. */
+import { createUser } from "@/app/(app)/kullanicilar/actions";
+export async function hesapAcVeBaglaAction(fd: FormData): Promise<Sonuc> {
+  try {
+    const u = await requireUser();
+    if (!u.isAdmin) return { ok: false, hata: "Hesap açma yetkisi yalnız admin kullanıcıdadır (Kullanıcılar sayfasıyla aynı kural)." };
+    const id = Number(fd.get("id"));
+    const kullanici = String(fd.get("kullanici") ?? "").trim().toLowerCase();
+    const sifre = String(fd.get("sifre") ?? "");
+    const sifre2 = String(fd.get("sifre2") ?? "");
+    if (sifre !== sifre2) return { ok: false, hata: "Şifreler aynı değil." };
+    const [t] = await (await import("@/lib/db")).db.$queryRaw<{ ad: string }[]>`select ad from portfoy.temsilci where id = ${id}`;
+    if (!t) return { ok: false, hata: "Temsilci bulunamadı." };
+
+    const f = new FormData();
+    f.set("username", kullanici); f.set("name", t.ad); f.set("password", sifre); f.set("role", "CALISAN");
+    const r = await createUser(null, f) as { ok?: boolean; error?: string };
+    if (r?.error) return { ok: false, hata: r.error };
+
+    await kullaniciBagla(id, kullanici, u.username);
+    tazele();
+    return { ok: true, mesaj: `${t.ad} için "${kullanici}" hesabı açıldı ve bağlandı. Kişi artık girişte Portföyüm'ü görür.` };
+  } catch (e) {
+    return { ok: false, hata: e instanceof Error ? e.message : "Hesap açılamadı." };
+  }
+}

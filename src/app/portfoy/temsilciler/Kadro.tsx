@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import {
-  aktifEtAction, devretAction, ekleAction, guncelleAction, pasifeAlAction, kullaniciBaglaAction,
+  aktifEtAction, devretAction, ekleAction, guncelleAction, pasifeAlAction, kullaniciBaglaAction, hesapAcVeBaglaAction,
   type Sonuc,
 } from "./actions";
 
@@ -17,7 +17,8 @@ const UNVAN: Record<number, string> = {
 const nf = (n: number, b = 1) =>
   n.toLocaleString("tr-TR", { minimumFractionDigits: b, maximumFractionDigits: b });
 
-export default function Kadro({ satirlar, baglar }: { satirlar: Satir[]; baglar: Record<number, string> }) {
+export default function Kadro({ satirlar, baglar, admin }: { satirlar: Satir[]; baglar: Record<number, string>; admin: boolean }) {
+  const [hesapAcik, setHesapAcik] = useState<number | null>(null);
   const [mesaj, setMesaj] = useState<string | null>(null);
   const [hata, setHata] = useState<string | null>(null);
   const [duzenlenen, setDuzenlenen] = useState<number | null>(null);
@@ -112,12 +113,36 @@ export default function Kadro({ satirlar, baglar }: { satirlar: Satir[]; baglar:
                   <td className="num">{nf(t.yuk, 2)}</td>
                   <td className="num pf-strong">{nf(t.puan)}</td>
                   <td>
-                    <form className="tk-hesap" action={(fd) => isle(kullaniciBaglaAction(fd))}>
-                      <input type="hidden" name="id" value={t.id} />
-                      <input name="kullanici" defaultValue={baglar[t.id] ?? ""} placeholder="kullanıcı adı"
-                             title="İş Takibi kullanıcı adı. Bağlanınca bu kişi girişte yalnız Portföyüm sayfasını görür." />
-                      <button className="btn ghost" disabled={bekle}>{baglar[t.id] ? "Güncelle" : "Bağla"}</button>
-                    </form>
+                    {baglar[t.id] ? (
+                      <form className="tk-hesap" action={(fd) => isle(kullaniciBaglaAction(fd))}>
+                        <input type="hidden" name="id" value={t.id} />
+                        <span className="tk-hesap-ad" title="Bu kişi girişte yalnız Portföyüm sayfasını görür">{baglar[t.id]}</span>
+                        <input type="hidden" name="kullanici" value="" />
+                        <button className="btn ghost" disabled={bekle} onClick={(e) => { if (!confirm(`${t.ad} hesap bağı kaldırılsın mı? Hesap silinmez, yalnız Portföyüm girişi kapanır.`)) e.preventDefault(); }}>Bağı kaldır</button>
+                      </form>
+                    ) : hesapAcik === t.id ? (
+                      <form className="tk-hesap tk-hesap-ac" action={(fd) => { isle(hesapAcVeBaglaAction(fd)); setHesapAcik(null); }}>
+                        <input type="hidden" name="id" value={t.id} />
+                        <input name="kullanici" required placeholder="kullanıcı adı" autoFocus
+                               defaultValue={t.ad.toLowerCase().replace(/[^a-z0-9ğüşıöç ]/g, "").replace(/ğ/g, "g").replace(/ü/g, "u").replace(/ş/g, "s").replace(/ı/g, "i").replace(/ö/g, "o").replace(/ç/g, "c").trim().split(/\s+/).slice(0, 2).join(".")}
+                               title="küçük harf, rakam, _ ve ." />
+                        <input name="sifre" type="password" required minLength={4} placeholder="şifre" autoComplete="new-password" />
+                        <input name="sifre2" type="password" required minLength={4} placeholder="şifre (tekrar)" autoComplete="new-password" />
+                        <button className="btn" disabled={bekle}>Aç ve bağla</button>
+                        <button type="button" className="btn ghost" onClick={() => setHesapAcik(null)}>Vazgeç</button>
+                      </form>
+                    ) : (
+                      <div className="tk-hesap">
+                        {admin
+                          ? <button type="button" className="btn ghost" onClick={() => setHesapAcik(t.id)}>Hesap aç</button>
+                          : <span className="pf-muted" title="Hesap açma yalnız admin kullanıcıda">—</span>}
+                        <form className="tk-hesap" action={(fd) => isle(kullaniciBaglaAction(fd))} title="Zaten hesabı olan birini bağla">
+                          <input type="hidden" name="id" value={t.id} />
+                          <input name="kullanici" placeholder="mevcut hesabı bağla" />
+                          <button className="btn ghost" disabled={bekle}>Bağla</button>
+                        </form>
+                      </div>
+                    )}
                   </td>
                   <td className="tk-eylem">
                     <button className="btn ghost" onClick={() => setDuzenlenen(t.id)}>Düzenle</button>

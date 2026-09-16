@@ -29,7 +29,7 @@ export default async function TemsilcilerPage() {
         <span className="pfp-user">{user.name}</span>
       </div>
       <div className="tk-govde">
-        <Kadro satirlar={satirlar} baglar={baglar} />
+        <Kadro satirlar={satirlar} baglar={baglar} admin={!!user.isAdmin} />
       </div>
     </div>
   );

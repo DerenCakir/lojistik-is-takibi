@@ -254,7 +254,7 @@ export async function uygula(
 
     // ---- geri alma için tam kopya ----
     const yedek = await tx.$queryRaw<unknown[]>`
-      select cari_kod, kod, ad, kanal, sevkiyat, malzeme_kodu from portfoy.teslim_noktasi`;
+      select cari_kod, kod, ad, kanal, sevkiyat, malzeme_kodu, aktif from portfoy.teslim_noktasi`;
     const kayit = await tx.$queryRaw<{ id: bigint }[]>`
       insert into portfoy.yukleme (kullanici, ozet, yedek)
       values (${kullanici},
@@ -355,15 +355,22 @@ export async function geriAl(yuklemeId: number, kullanici: string) {
     if (r[0].geri_alindi) throw new Error("Bu yükleme zaten geri alınmış.");
     const satirlar = r[0].yedek as {
       cari_kod: string; kod: string; ad: string; kanal: number | null;
-      sevkiyat: number; malzeme_kodu: number;
+      sevkiyat: number; malzeme_kodu: number; aktif?: boolean;
     }[];
+
+    // aktif alani sonradan eklendi: eski yedeklerde yoksa, o noktanin bugunku
+    // pasif/aktif durumu korunur (pasif isaretleri yukleme geri alinca kaybolmasin).
+    const bugunAktif = await tx.$queryRaw<{ cari_kod: string; kod: string; aktif: boolean }[]>`
+      select cari_kod, kod, aktif from portfoy.teslim_noktasi`;
+    const aktifMap = new Map(bugunAktif.map((n) => [`${n.cari_kod}|${n.kod}`, n.aktif]));
 
     await tx.$executeRaw`delete from portfoy.teslim_noktasi`;
     for (const s of satirlar) {
+      const aktif = s.aktif ?? aktifMap.get(`${s.cari_kod}|${s.kod}`) ?? true;
       await tx.$executeRaw`
-        insert into portfoy.teslim_noktasi (cari_kod, kod, ad, kanal, sevkiyat, malzeme_kodu)
+        insert into portfoy.teslim_noktasi (cari_kod, kod, ad, kanal, sevkiyat, malzeme_kodu, aktif)
         values (${s.cari_kod}, ${s.kod}, ${s.ad}, ${s.kanal},
-                ${Number(s.sevkiyat)}, ${Number(s.malzeme_kodu)})`;
+                ${Number(s.sevkiyat)}, ${Number(s.malzeme_kodu)}, ${aktif})`;
     }
     // yuklemede eklenen, sonradan dokunulmamis cariler
     const ozet = r[0].ozet as { kararlar?: { eklenecekCari?: { kod: string }[] } } | null;

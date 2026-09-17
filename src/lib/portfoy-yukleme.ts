@@ -74,6 +74,7 @@ export async function karsilastir(satirlar: HamSatir[]): Promise<Karsilastirma> 
   const dosyaNokta = new Map<string, DosyaNokta>();          // "cari|teslim"
   const dosyaCari = new Map<string, { ad: string; nokta: number; sevkiyat: number; malzeme: number; kanal: number | null }>();
   let naSayisi = 0;
+  let tekrarSayisi = 0;
 
   for (const r of satirlar) {
     const cari = kodNormalize(r.cari);
@@ -86,14 +87,25 @@ export async function karsilastir(satirlar: HamSatir[]): Promise<Karsilastirma> 
     const gm = sayiVeyaNull(r.malzeme);
     if (sv === null || gm === null) naSayisi++;
 
-    dosyaNokta.set(`${cari}|${teslim}`, { sevkiyat: sv, malzeme: gm, ad: String(r.ad ?? "").trim() });
+    // Pivot ayni noktayi kanala/ada gore bolmus olabilir: satirlar toplanir,
+    // sonuncusu oncekini ezmez.
+    const anahtar = `${cari}|${teslim}`;
+    const onceki = dosyaNokta.get(anahtar);
+    if (onceki) {
+      tekrarSayisi++;
+      onceki.sevkiyat = sv === null ? onceki.sevkiyat : (onceki.sevkiyat ?? 0) + sv;
+      onceki.malzeme = gm === null ? onceki.malzeme : (onceki.malzeme ?? 0) + gm;
+    } else {
+      dosyaNokta.set(anahtar, { sevkiyat: sv, malzeme: gm, ad: String(r.ad ?? "").trim() });
+    }
     const c = dosyaCari.get(cari) ?? { ad: "", nokta: 0, sevkiyat: 0, malzeme: 0, kanal: null };
     if (!c.ad) c.ad = String(r.ad ?? "").trim();
     if (c.kanal === null) {
       const kn = sayiVeyaNull(r.kanal);
       if (kn === 10 || kn === 20) c.kanal = kn;
     }
-    c.nokta++; c.sevkiyat += sv ?? 0; c.malzeme += gm ?? 0;
+    if (!onceki) c.nokta++;
+    c.sevkiyat += sv ?? 0; c.malzeme += gm ?? 0;
     dosyaCari.set(cari, c);
   }
 
@@ -169,6 +181,11 @@ export async function karsilastir(satirlar: HamSatir[]): Promise<Karsilastirma> 
   const oncekiSevkiyat = mevcutNokta.reduce((a, n) => a + Number(n.sevkiyat), 0);
   const oncekiMalzeme = mevcutNokta.reduce((a, n) => a + Number(n.malzeme_kodu), 0);
 
+  if (tekrarSayisi) {
+    uyarilar.push(
+      `${tekrarSayisi} satır aynı cari + teslim noktasını tekrar ediyor (pivot kanala veya ada ` +
+      `göre bölmüş). Bu satırların sevkiyat ve malzeme sayıları toplandı.`);
+  }
   if (naSayisi) {
     uyarilar.push(
       `${naSayisi} satırda sevkiyat veya malzeme sayısı okunamadı (#N/A). ` +
@@ -242,8 +259,15 @@ export async function uygula(
     const cari = kodNormalize(r.cari), teslim = kodNormalize(r.teslim);
     if (!cari || !teslim || !/^\d+$/.test(cari)) continue;
     const kn = sayiVeyaNull(r.kanal);
+    const sv = sayiVeyaNull(r.sevkiyat), gm = sayiVeyaNull(r.malzeme);
+    const onceki = dosya.get(`${cari}|${teslim}`);
+    if (onceki) {   // karsilastir ile ayni kural: tekrar eden satirlar toplanir
+      onceki.sevkiyat = sv === null ? onceki.sevkiyat : (onceki.sevkiyat ?? 0) + sv;
+      onceki.malzeme = gm === null ? onceki.malzeme : (onceki.malzeme ?? 0) + gm;
+      continue;
+    }
     dosya.set(`${cari}|${teslim}`, {
-      sevkiyat: sayiVeyaNull(r.sevkiyat), malzeme: sayiVeyaNull(r.malzeme),
+      sevkiyat: sv, malzeme: gm,
       ad: String(r.ad ?? "").trim(), kanal: kn === 10 || kn === 20 ? kn : null,
     });
   }

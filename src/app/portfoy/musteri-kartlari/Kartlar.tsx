@@ -132,7 +132,7 @@ export default function Kartlar({ liste, turler: ilkTurler, temsilciler, yazar, 
   };
 
   return (
-    <>
+    <div className="mk-govde">
     <div className="mk-sekmeler">
       {([["musteriler", "Müşteriler"], ["izin", "İzin & Devir"], ["hatirlatma", "Hatırlatmalar"]] as [Sekme, string][]).map(([k, ad]) => (
         <button type="button" key={k} className={"mk-sekme" + (sekme === k ? " on" : "")} onClick={() => setSekme(k)}>
@@ -353,7 +353,7 @@ export default function Kartlar({ liste, turler: ilkTurler, temsilciler, yazar, 
         )}
       </section>
     </div>
-    </>
+    </div>
   );
 }
 

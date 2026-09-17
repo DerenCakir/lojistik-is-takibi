@@ -485,8 +485,10 @@ a.item:hover{border-color:color-mix(in srgb, var(--brand) 42%, var(--line)); box
 @media (max-width:720px){ .ym-satir{flex-direction:column} }
 
 /* ---- portföy: müşteri kartları (mk-) ---- */
+/* pfp-wrap position:fixed oldugu icin sayfa kendi kaymaz; govde kayar (tekerlek burada calisir) */
+.mk-govde{flex:1; min-height:0; overflow:auto; display:flex; flex-direction:column}
 .mk-lyt{display:grid; grid-template-columns:360px 1fr; gap:16px; padding:16px 18px; max-width:1700px; margin:0 auto; align-items:start}
-.mk-liste{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 110px); position:sticky; top:16px}
+.mk-liste{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px; display:flex; flex-direction:column; gap:10px; height:calc(100vh - 110px); position:sticky; top:0}
 .mk-ara{width:100%}
 .mk-filt{display:grid; grid-template-columns:1fr 1fr; gap:8px}
 .mk-filt select{width:100%; min-width:0}

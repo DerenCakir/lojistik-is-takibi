@@ -77,7 +77,7 @@ export default function Portfoyum({ benimId, ilkBenim, ilkYedek, ilkHat, temsilc
   const q = ara.trim().toLowerCase();
 
   return (
-    <>
+    <div className="mk-govde">
       <div className="mk-sekmeler">
         <button type="button" className={"mk-sekme" + (sekme === "benim" ? " on" : "")} onClick={() => setSekme("benim")}>Müşterilerim · {benim.length}</button>
         <button type="button" className={"mk-sekme" + (sekme === "yedek" ? " on" : "")} onClick={() => setSekme("yedek")}>
@@ -278,6 +278,6 @@ export default function Portfoyum({ benimId, ilkBenim, ilkYedek, ilkHat, temsilc
           <div className="kucuk" style={{ marginTop: 8 }}>Yalnız sana düşen hatırlatmalar. Asıl temsilci ve yöneticiler de görür.</div>
         </div></div>
       )}
-    </>
+    </div>
   );
 }

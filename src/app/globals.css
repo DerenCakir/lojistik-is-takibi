@@ -407,6 +407,11 @@ a.item:hover{border-color:color-mix(in srgb, var(--brand) 42%, var(--line)); box
 .vy-tablo select{width:auto; min-width:104px; padding:4px 8px; font-size:12px}
 .vy-kod{font-size:11px; color:var(--muted); font-family:var(--mono,monospace)}
 .vy-supheli{opacity:.62}
+.vy-son{margin-bottom:18px}
+.vy-etki{margin-top:18px; border-top:1px solid var(--line); padding-top:16px}
+.vy-etki h4{margin:0 0 6px; font-size:13.5px; display:flex; align-items:center; gap:8px}
+.vy-etki h4 span{font-size:11.5px; color:var(--muted); font-weight:500}
+.vy-arti{color:#12715a; font-weight:650}.vy-eksi{color:#c0442a; font-weight:650}.vy-ayni{color:var(--muted)}
 .vy-etiket{
   margin-left:8px; font-size:10.5px; padding:1px 7px; border-radius:99px;
   background:var(--amber-soft); color:var(--amber);

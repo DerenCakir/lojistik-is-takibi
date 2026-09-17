@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
  * Excel sürükle-bırak + önizleme + uygulama.
@@ -209,6 +209,105 @@ export default function Yukleyici() {
     }
   }
 
+  // ---- son yükleme + etki raporu ----
+  type Son = { yuklemeId: number; ts: string; kullanici: string | null; sayac: Record<string, number> | null };
+  type Etki = {
+    yuklemeId: number; ts: string;
+    temsilci: { id: number | null; ad: string; ekip: string | null; yukOnce: number; yukSonra: number; puanOnce: number; puanSonra: number }[];
+    cari: { kod: string; ad: string; yukOnce: number; yukSonra: number; svOnce: number; svSonra: number; gmOnce: number; gmSonra: number }[];
+    toplam: { yukOnce: number; yukSonra: number };
+  };
+  const [son, setSon] = useState<Son | null>(null);
+  const [etki, setEtki] = useState<Etki | null>(null);
+  const [etkiDurum, setEtkiDurum] = useState<"yok" | "yukleniyor" | "hata">("yok");
+  const [tumCari, setTumCari] = useState(false);
+
+  useEffect(() => {
+    if (durum !== "bos") return;
+    fetch("/api/portfoy/yukleme", {
+      method: "POST", credentials: "same-origin",
+      headers: { "Content-Type": "application/json" }, body: JSON.stringify({ islem: "son" }),
+    }).then((r) => r.ok ? r.json() : null).then((d) => setSon(d && d.yuklemeId ? d : null)).catch(() => setSon(null));
+  }, [durum]);
+
+  async function etkiGoster(id: number) {
+    setEtkiDurum("yukleniyor"); setEtki(null); setTumCari(false); setHata(null);
+    try {
+      const cevap = await fetch("/api/portfoy/yukleme", {
+        method: "POST", credentials: "same-origin",
+        headers: { "Content-Type": "application/json" }, body: JSON.stringify({ islem: "etki", yuklemeId: id }),
+      });
+      const d = await cevap.json();
+      if (!cevap.ok) throw new Error(d.hata ?? "Etki hesaplanamadı.");
+      setEtki(d); setEtkiDurum("yok");
+    } catch (e) {
+      setHata(e instanceof Error ? e.message : "Etki hesaplanamadı."); setEtkiDurum("hata");
+    }
+  }
+
+  async function geriAlId(id: number) {
+    if (!confirm("Bu yükleme geri alınacak, hacim verisi önceki hâline dönecek. Emin misiniz?")) return;
+    const cevap = await fetch("/api/portfoy/yukleme", {
+      method: "POST", credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ islem: "geri_al", yuklemeId: id }),
+    });
+    const d = await cevap.json();
+    if (!cevap.ok) { setHata(d.hata ?? "Geri alınamadı."); return; }
+    setEtki(null); setSon(null); sifirla();
+  }
+
+  const nf = (v: number, b = 2) => v.toLocaleString("tr-TR", { minimumFractionDigits: b, maximumFractionDigits: b });
+  const fark = (a: number, b: number, hane = 2) => {
+    const f = b - a; if (Math.abs(f) < 1e-9) return <span className="vy-ayni">—</span>;
+    return <span className={f > 0 ? "vy-arti" : "vy-eksi"}>{f > 0 ? "+" : ""}{nf(f, hane)}</span>;
+  };
+
+  const etkiPaneli = (() => {
+    if (etkiDurum === "yukleniyor") return <div className="vy-dosya">Etki hesaplanıyor… (hiçbir şey yazılmıyor)</div>;
+    if (!etki) return null;
+    const t = [...etki.temsilci].sort((a, b) => Math.abs(b.puanSonra - b.puanOnce) - Math.abs(a.puanSonra - a.puanOnce));
+    const c = tumCari ? etki.cari : etki.cari.slice(0, 30);
+    return (
+      <div className="vy-etki">
+        <h4>Puan etkisi <span>yükleme öncesi → sonrası</span></h4>
+        <p className="vy-aciklama">
+          Toplam yük {nf(etki.toplam.yukOnce)} → <b>{nf(etki.toplam.yukSonra)}</b> ({fark(etki.toplam.yukOnce, etki.toplam.yukSonra)}).
+          Öncesi, yükleme kaydındaki yedekten geçici olarak hesaplanır; veritabanına yazılmaz.
+        </p>
+        <table className="vy-tablo">
+          <thead><tr><th>Temsilci</th><th className="num">Yük önce</th><th className="num">Yük sonra</th><th className="num">Fark</th><th className="num">Puan önce</th><th className="num">Puan sonra</th><th className="num">Fark</th></tr></thead>
+          <tbody>
+            {t.map((x) => (
+              <tr key={String(x.id)}>
+                <td>{x.ad}{x.ekip ? <span className="vy-kod"> · {x.ekip}</span> : null}</td>
+                <td className="num">{nf(x.yukOnce)}</td><td className="num">{nf(x.yukSonra)}</td><td className="num">{fark(x.yukOnce, x.yukSonra)}</td>
+                <td className="num">{nf(x.puanOnce)}</td><td className="num">{nf(x.puanSonra)}</td><td className="num">{fark(x.puanOnce, x.puanSonra)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <h4 style={{ marginTop: 22 }}>Yükü değişen müşteriler <span>{ni(etki.cari.length)}</span></h4>
+        <table className="vy-tablo">
+          <thead><tr><th>Müşteri</th><th className="num">Sevkiyat</th><th className="num">Malzeme</th><th className="num">Yük önce</th><th className="num">Yük sonra</th><th className="num">Fark</th></tr></thead>
+          <tbody>
+            {c.map((x) => (
+              <tr key={x.kod}>
+                <td>{x.ad} <span className="vy-kod">{x.kod}</span></td>
+                <td className="num">{ni(x.svOnce)} → {ni(x.svSonra)}</td>
+                <td className="num">{ni(x.gmOnce)} → {ni(x.gmSonra)}</td>
+                <td className="num">{nf(x.yukOnce)}</td><td className="num">{nf(x.yukSonra)}</td><td className="num">{fark(x.yukOnce, x.yukSonra)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {!tumCari && etki.cari.length > 30 && (
+          <button className="btn ghost" style={{ marginTop: 10 }} onClick={() => setTumCari(true)}>Hepsini göster ({ni(etki.cari.length)})</button>
+        )}
+      </div>
+    );
+  })();
+
   async function geriAlTikla() {
     if (!sonuc) return;
     if (!confirm("Bu yükleme geri alınacak, hacim verisi önceki hâline dönecek. Emin misiniz?")) return;
@@ -239,11 +338,30 @@ export default function Yukleyici() {
         </table>
         <div className="vy-dugmeler">
           <button className="btn" onClick={sifirla}>Yeni dosya yükle</button>
+          <button className="btn ghost" onClick={() => etkiGoster(sonuc.yuklemeId)} disabled={etkiDurum === "yukleniyor"}>Puan etkisini göster</button>
           <button className="btn ghost" onClick={geriAlTikla}>Bu yüklemeyi geri al</button>
         </div>
+        {hata && <div className="vy-uyari kirmizi">{hata}</div>}
+        {etkiPaneli}
       </div>
     );
   }
+
+  // Sayfadan cikilmis olsa da son yuklemenin etkisi ve geri alma ulasilabilir kalsin.
+  const sonSeridi = durum === "bos" && son ? (
+    <div className="vy-kart vy-son">
+      <div className="vy-dosya">
+        Son yükleme: {new Date(son.ts).toLocaleString("tr-TR", { dateStyle: "medium", timeStyle: "short" })}
+        {son.kullanici ? ` · ${son.kullanici}` : ""}
+        {son.sayac ? ` · ${ni(son.sayac.yeniCari ?? 0)} yeni cari · ${ni(son.sayac.yeniNokta ?? 0)} yeni nokta · ${ni(son.sayac.guncellenen ?? 0)} güncellendi` : ""}
+      </div>
+      <div className="vy-dugmeler">
+        <button className="btn ghost" onClick={() => etkiGoster(son.yuklemeId)} disabled={etkiDurum === "yukleniyor"}>Puan etkisini göster</button>
+        <button className="btn ghost" onClick={() => geriAlId(son.yuklemeId)}>Bu yüklemeyi geri al</button>
+      </div>
+      {etkiPaneli}
+    </div>
+  ) : null;
 
   // "uygulaniyor" sirasinda da onizleme ekranda kalir; yoksa dugmeye basinca bos ekran gorunur.
   if ((durum === "onizleme" || durum === "uygulaniyor") && k) {
@@ -414,6 +532,8 @@ export default function Yukleyici() {
   }
 
   return (
+    <>
+    {sonSeridi}
     <div
       className={"vy-birak" + (uzerinde ? " uzerinde" : "")}
       onDragOver={(e) => { e.preventDefault(); setUzerinde(true); }}
@@ -434,5 +554,6 @@ export default function Yukleyici() {
       <div className="vy-alt">veya tıklayıp seçin · .xlsx</div>
       {hata && <div className="vy-uyari kirmizi" onClick={(e) => e.stopPropagation()}>{hata}</div>}
     </div>
+    </>
   );
 }

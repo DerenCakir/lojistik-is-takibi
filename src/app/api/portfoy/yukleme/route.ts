@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { jsonCevap, portfoyYetki, temsilciKimligi } from "@/lib/portfoy";
-import { karsilastir, uygula, geriAl, type HamSatir, type Kararlar } from "@/lib/portfoy-yukleme";
+import { karsilastir, uygula, geriAl, etki, sonYukleme, type HamSatir, type Kararlar } from "@/lib/portfoy-yukleme";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -13,6 +13,7 @@ export const maxDuration = 120;
  *   { islem: "karsilastir", satirlar }            -> önizleme (hiçbir şey yazılmaz)
  *   { islem: "uygula", satirlar, kararlar }       -> onaylananları yazar
  *   { islem: "geri_al", yuklemeId }               -> yükleme öncesine döner
+ *   { islem: "etki", yuklemeId }                  -> puan etkisi (salt okunur)
  *
  * Yalnız müdür. Veri yükleme tüm portföyü etkiler.
  */
@@ -49,6 +50,13 @@ export async function POST(req: Request) {
         eklenecekCari: [], eklenecekNokta: [], kaldirilacakNokta: [], hacimGuncelle: true,
       };
       return jsonCevap(await uygula(satirlar, k, user.username));
+    }
+    if (g.islem === "son") {
+      return jsonCevap(await sonYukleme());
+    }
+    if (g.islem === "etki") {
+      if (!g.yuklemeId) return NextResponse.json({ hata: "Yükleme kimliği yok." }, { status: 400 });
+      return jsonCevap(await etki(Number(g.yuklemeId)));
     }
     if (g.islem === "geri_al") {
       if (!g.yuklemeId) return NextResponse.json({ hata: "Yükleme kimliği yok." }, { status: 400 });

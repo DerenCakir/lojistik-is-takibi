@@ -418,3 +418,101 @@ export async function geriAl(yuklemeId: number, kullanici: string) {
               ${`${satirlar.length} satır geri yüklendi · ${silinen} cari silindi`}, ${kullanici})`;
   }, { timeout: 120000 });
 }
+
+/* =====================================================================
+   ETKİ RAPORU
+   Yüklemenin puanlara etkisi: yükleme öncesi hacim (yedek) bir transaction
+   içinde geçici olarak geri yazılır, görünümler okunur, transaction her
+   durumda geri alınır. Veritabanına kalıcı hiçbir şey yazılmaz.
+   ===================================================================== */
+
+export type Etki = {
+  yuklemeId: number; ts: string;
+  temsilci: { id: number | null; ad: string; ekip: string | null;
+              yukOnce: number; yukSonra: number; puanOnce: number; puanSonra: number }[];
+  cari: { kod: string; ad: string; yukOnce: number; yukSonra: number;
+          svOnce: number; svSonra: number; gmOnce: number; gmSonra: number }[];
+  toplam: { yukOnce: number; yukSonra: number };
+};
+
+type TemsilciSatir = { temsilci_id: bigint | null; temsilci: string; ekip: string | null; yuk_toplam: number; puan: number };
+type CariSatir = { cari_kod: string; cari_ad: string; yuk: number | null; sv: number; gm: number; aktif: boolean };
+
+const GERI_AL_ISARETI = "__etki_geri_al__";
+
+export async function etki(yuklemeId: number): Promise<Etki> {
+  let sonuc: Etki | null = null;
+  try {
+    await db.$transaction(async (tx) => {
+      const r = await tx.$queryRaw<{ ts: Date; yedek: unknown; geri_alindi: boolean }[]>`
+        select ts, yedek, geri_alindi from portfoy.yukleme where id = ${yuklemeId}`;
+      if (!r.length) throw new Error("Yükleme kaydı bulunamadı.");
+      if (r[0].geri_alindi) throw new Error("Bu yükleme geri alınmış; etkisi kalmadı.");
+      const yedek = r[0].yedek as { cari_kod: string; kod: string; sevkiyat: number; malzeme_kodu: number }[];
+
+      const temsilciSonra = await tx.$queryRaw<TemsilciSatir[]>`
+        select temsilci_id, temsilci, ekip, yuk_toplam, puan from portfoy.v_temsilci_puan`;
+      const cariSonra = await tx.$queryRaw<CariSatir[]>`
+        select cari_kod, cari_ad, yuk, sv, gm, aktif from portfoy.v_cari_yuk`;
+
+      // ---- yükleme öncesi hacme dön (yalnız bu transaction içinde) ----
+      await tx.$executeRaw`
+        delete from portfoy.teslim_noktasi t
+        where not exists (
+          select 1 from jsonb_to_recordset(${JSON.stringify(yedek)}::jsonb)
+                 as y(cari_kod text, kod text)
+          where y.cari_kod = t.cari_kod and y.kod = t.kod)`;
+      await tx.$executeRaw`
+        update portfoy.teslim_noktasi t
+           set sevkiyat = y.sevkiyat, malzeme_kodu = y.malzeme_kodu
+          from jsonb_to_recordset(${JSON.stringify(yedek)}::jsonb)
+               as y(cari_kod text, kod text, sevkiyat int, malzeme_kodu int)
+         where y.cari_kod = t.cari_kod and y.kod = t.kod`;
+
+      const temsilciOnce = await tx.$queryRaw<TemsilciSatir[]>`
+        select temsilci_id, temsilci, ekip, yuk_toplam, puan from portfoy.v_temsilci_puan`;
+      const cariOnce = await tx.$queryRaw<CariSatir[]>`
+        select cari_kod, cari_ad, yuk, sv, gm, aktif from portfoy.v_cari_yuk`;
+
+      const tOnce = new Map(temsilciOnce.map((t) => [String(t.temsilci_id ?? "null"), t]));
+      const cOnce = new Map(cariOnce.map((c) => [c.cari_kod, c]));
+      const n = (v: unknown) => Number(v ?? 0);
+
+      sonuc = {
+        yuklemeId, ts: r[0].ts.toISOString(),
+        temsilci: temsilciSonra.map((t) => {
+          const o = tOnce.get(String(t.temsilci_id ?? "null"));
+          return { id: t.temsilci_id === null ? null : Number(t.temsilci_id), ad: t.temsilci, ekip: t.ekip,
+                   yukOnce: n(o?.yuk_toplam), yukSonra: n(t.yuk_toplam), puanOnce: n(o?.puan), puanSonra: n(t.puan) };
+        }),
+        cari: cariSonra.filter((c) => c.aktif).map((c) => {
+          const o = cOnce.get(c.cari_kod);
+          return { kod: c.cari_kod, ad: c.cari_ad, yukOnce: n(o?.yuk), yukSonra: n(c.yuk),
+                   svOnce: n(o?.sv), svSonra: n(c.sv), gmOnce: n(o?.gm), gmSonra: n(c.gm) };
+        }).filter((c) => Math.abs(c.yukSonra - c.yukOnce) > 1e-9 || c.svOnce !== c.svSonra || c.gmOnce !== c.gmSonra)
+          .sort((a, b) => Math.abs(b.yukSonra - b.yukOnce) - Math.abs(a.yukSonra - a.yukOnce)),
+        toplam: {
+          yukOnce: temsilciOnce.reduce((a, t) => a + n(t.yuk_toplam), 0),
+          yukSonra: temsilciSonra.reduce((a, t) => a + n(t.yuk_toplam), 0),
+        },
+      };
+      throw new Error(GERI_AL_ISARETI);   // her durumda geri al
+    }, { timeout: 120000 });
+  } catch (e) {
+    if (!(e instanceof Error && e.message === GERI_AL_ISARETI)) throw e;
+  }
+  if (!sonuc) throw new Error("Etki hesaplanamadı.");
+  return sonuc;
+}
+
+/** Geri alınmamış son yükleme (sayfadan çıkıldıysa etki/geri al için). */
+export async function sonYukleme(): Promise<{ yuklemeId: number; ts: string; kullanici: string | null; sayac: Record<string, number> | null } | null> {
+  const var_ = await db.$queryRaw<{ n: bigint }[]>`
+    select count(*) n from information_schema.tables where table_schema = 'portfoy' and table_name = 'yukleme'`;
+  if (!Number(var_[0]?.n)) return null;   // hic yukleme yapilmadiysa tablo da yok
+  const r = await db.$queryRaw<{ id: bigint; ts: Date; kullanici: string | null; ozet: { sayac?: Record<string, number> } | null }[]>`
+    select id, ts, kullanici, ozet from portfoy.yukleme
+     where not geri_alindi order by id desc limit 1`;
+  if (!r.length) return null;
+  return { yuklemeId: Number(r[0].id), ts: r[0].ts.toISOString(), kullanici: r[0].kullanici, sayac: r[0].ozet?.sayac ?? null };
+}
